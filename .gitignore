@@ -1,55 +1,64 @@
-# Prerequisites
-*.d
-
-# Object files
+# ===================== 构建产物 / 编译缓存 =====================
+build/
+**/build/
+.cache/
+**/.cache/
+cmake/
+**/cmake/
 *.o
-*.ko
+*.a
 *.obj
 *.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
+*.bin
 *.hex
-
-# Debug files
+*.map
+*.out
+*.exe
+*.ilk
+*.pdb
 *.dSYM/
 *.su
 *.idb
-*.pdb
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# ===================== CMake 生成文件 =====================
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+compile_commands.json
+.clangd/
 
-# debug information files
-*.dwo
+# ===================== ESP-IDF (ESP32S3) 生成文件 =====================
+sdkconfig
+sdkconfig.old
+sdkconfig.defaults.bak
+flasher_args.json
+managed_components/
+components/.idf/
+.espressif/
+.dependencies.lock
+project_description.json
+dependencies.lock
+
+# ===================== 第三方工具包 / 大体积二进制 =====================
+*.pack
+*.zip
+
+# ===================== IDE / 编辑器 =====================
+.idea/
+*.user
+*.suo
+*.sln.docstates
+*.swp
+*.swo
+*~
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.vscode/*.log
+
+# ===================== 日志 / 临时文件 =====================
+*.log
+*.tmp
+*.bak

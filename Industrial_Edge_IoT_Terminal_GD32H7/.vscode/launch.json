@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/link_protocolFrame.elf",  
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "pyocd",                                   
+            "targetId": "gd32h757zm",                                
+            "armToolchainPath": "E:/toolchainForARM/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin",  
+            "gdbPath": "E:/toolchainForARM/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/arm-none-eabi-gdb.exe", 
+            "serverpath": "pyocd",               
+            "serverArgs": ["--frequency", "1000000",
+                           "--pack","E:/GD32_docs_zip/GD32H7xx_AddOn_V1.4.0/GigaDevice.GD32H7xx_DFP.1.4.0.pack"
+            ],
+            "showDevDebugOutput": "raw",        // 便于查看详细错误
+            "overrideGDBServerStartedRegex": "(started|Listening) on port",
+            "preLaunchTask": "build"            // 关键：调试前执行 build 任务
+        }
+    ]
+}
+

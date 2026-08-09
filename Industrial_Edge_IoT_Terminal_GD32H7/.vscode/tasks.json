@@ -1,0 +1,29 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",                           // 任务名称，与 launch.json 中的 preLaunchTask 一致
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/build",             // 你的构建目录路径
+                "--config", "Debug",                    // 可选：Debug 或 Release
+                "--target", "link_protocolFrame.elf"                  // 可选：指定目标名称，不指定则构建所有
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"                                  // 让编译错误显示在问题面板
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",                     // 编译时自动打开终端
+                "focus": false,
+                "panel": "shared"
+            }
+        }
+    ]
+}

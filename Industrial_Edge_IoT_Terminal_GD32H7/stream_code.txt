@@ -1,0 +1,51 @@
+typedef struct __typdef_uart_struct
+{  
+    rcu_periph_enum rcu_uart_x; 
+    uint32_t uart_x; 
+    uint32_t baudrate;
+    uint32_t parity;
+    uint32_t data_length;
+    com_mode_enum uart_mode_tx; //UART_POLL,UART_DMA,UART_INT 
+    com_mode_enum uart_mode_rx; //UART_POLL,UART_DMA,UART_INT     
+
+    typdef_gpio_general* uart_tx_gpio;
+    typdef_gpio_general* uart_rx_gpio;  
+    typdef_dma_general*  uart_tx_dma;
+    typdef_dma_general*  uart_rx_dma;  
+
+    typdef_com_control_general  uart_control;
+
+    void (*uart_tbe_callback)(struct  __typdef_uart_struct *uartx);
+    void (*uart_tc_callback)(struct   __typdef_uart_struct *uartx);
+    void (*uart_rbne_callback)(struct __typdef_uart_struct *uartx);
+    void (*uart_idle_callback)(struct __typdef_uart_struct *uartx);
+}typdef_uart_struct;   
+
+typedef struct __typdef_gpio_general
+{
+    rcu_periph_enum rcu_port;
+    uint32_t port;
+    uint32_t pin;
+    gpio_mode_enum gpio_mode;
+    uint32_t speed;
+    bit_status default_state;
+    uint32_t int_port;
+    uint32_t int_pin;
+    exti_line_enum extix;
+    void (*int_callback)(struct __typdef_gpio_general *exti);
+    uint32_t afio_mode;
+}typdef_gpio_general;
+
+
+
+extern typdef_uart_struct BOARD_UART;
+
+BOARD_UART.uart_mode_tx = MODE_DMA;
+
+typdef_uart_struct* board_uart = &BOARD_UART;
+
+rcu_periph_clock_enable(board_uart -> rcu_uart_x);
+
+usart_deinit(board_uart -> uart_x);
+
+
