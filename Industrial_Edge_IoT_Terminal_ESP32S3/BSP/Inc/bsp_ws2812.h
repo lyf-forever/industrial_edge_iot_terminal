@@ -1,11 +1,14 @@
-#ifndef __WS2812_H
-#define __WS2812_H
+#ifndef __BSP_WS2812_H
+#define __BSP_WS2812_H
 
 /*==============================================*
  *      包含的头文件
  *----------------------------------------------*/
 #include <stdint.h>
 #include "soc/gpio_num.h"
+#include "sys.h"
+
+#if Ws2812Use
 
 /*==============================================*
  *       宏定义/常量/typedef/enum
@@ -31,6 +34,7 @@ void ws2812_writeGRB(uint8_t g, uint8_t r, uint8_t b);
 void ws2812_on(void);
 void ws2812_off(void);
 
+#endif /* Ws2812Use */
 
 #endif 
 

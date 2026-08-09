@@ -1,4 +1,4 @@
-#include "mq2.h"
+#include "bsp_mq2.h"
 
 #if Mq2Use
 #include "esp_adc/adc_cali.h"
@@ -6,6 +6,8 @@
 #include "esp_adc_cal.h"
 
 static float mq2_cal_ro = 0.0f;
+/* ADC 特性结构体，全局保存避免泄漏 */
+static esp_adc_cal_characteristics_t mq2_adc_chars;
 
 /******************************************************************
  * 函数名称：mq2_drv_init
@@ -14,7 +16,7 @@ static float mq2_cal_ro = 0.0f;
  * 函数返回：void
  * 作者：Lyf
  * 备注：无
-******************************************************************/
+ ******************************************************************/
 void mq2_drv_init(void)
 {
     /* 配置ADC分辨率 */
@@ -26,12 +28,11 @@ void mq2_drv_init(void)
        ADC_ATTEN_DB_11:表示参考电压为3.3V */
     adc1_config_channel_atten( MQ2_ADC_CHANNEL,MQ2_ADC_ATTEN); // 设置通道5和3.3V参考电压
     /* ADC特性校准 */
-    esp_adc_cal_characteristics_t *mq2_adcChars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
-    esp_adc_cal_characterize(MQ2_ADC_UNIT, MQ2_ADC_ATTEN, MQ2_ADC_BITWIDTH, MQ2_DFT_VREF, mq2_adcChars);
+    esp_adc_cal_characterize(MQ2_ADC_UNIT, MQ2_ADC_ATTEN, MQ2_ADC_BITWIDTH, MQ2_DFT_VREF, &mq2_adc_chars);
 }
 
 /******************************************************************
- * 函数名称：mq2_getValue
+ * 函数名称：mq2_get_rawValue
  * 函数说明：对DMA保存的数据进行平均值计算后输出
  * 函数形参：uint16_t adc原始值
  * 函数返回：对应扫描的ADC采样平均原始值
@@ -125,7 +126,7 @@ uint16_t mq2_getPercentage(void)
     uint16_t adc_new = 0;
     uint16_t Percentage_value = 0;
 
-    adc_new = mq2_getValue();
+    adc_new = mq2_get_rawValue();
 
     Percentage_value = ((float)adc_new/adc_max) * 100;
     return Percentage_value;

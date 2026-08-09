@@ -1,5 +1,5 @@
-#ifndef __MQ2_H_
-#define __MQ2_H_
+#ifndef __BSP_MQ2_H_
+#define __BSP_MQ2_H_
 
 #include "sys.h"
 #include "driver/gpio.h"
@@ -32,8 +32,8 @@
 
 /* =========================API declare=============================*/
 void mq2_drv_init(void);
-uint32_t mq2_getConcentration(void);
-uint32_t mq2_getPercentage(void);
+float mq2_getConcentration(void);
+uint16_t mq2_getPercentage(void);
 
 /* =========================API declare=============================*/
 

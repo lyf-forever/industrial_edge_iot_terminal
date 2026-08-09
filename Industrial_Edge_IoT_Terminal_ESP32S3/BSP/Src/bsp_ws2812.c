@@ -1,7 +1,9 @@
 /*----------------------------------------------*
  *      包含的头文件
  *----------------------------------------------*/
-#include "ws2812.h"
+#include "bsp_ws2812.h"
+
+#if Ws2812Use
 #include <math.h>
 #include "freertos/FreeRTOS.h" 
 #include "freertos/task.h" 
@@ -148,4 +150,6 @@ void ws2812_off(void)
 {
     ws2812_writeGRB(0, 0, 0);
 }
+
+#endif /* Ws2812Use */
 
