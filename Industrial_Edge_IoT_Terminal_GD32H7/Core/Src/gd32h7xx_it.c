@@ -33,6 +33,7 @@ OF SUCH DAMAGE.
 */
 
 #include "gd32h7xx_it.h"
+#include "public.h"
 #include "bsp_8080_lcd.h"
 #include "systick.h"
 #include "sys.h"
@@ -189,6 +190,8 @@ void SysTick_Handler(void)
 {
     // delay_decrement();
     system_ticks++;
+    /* 架构 3.8：驱动软定时器回调表（1/10/100ms 三轮） */
+    driver_tic_inc();
 }
 
 uint32_t get_tick(void){

@@ -18,6 +18,10 @@ MEMORY
     DTCMRAM (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
     SRAM0 (xrw)   : ORIGIN = 0x30000000, LENGTH = 16K
     SRAM1 (xrw)   : ORIGIN = 0x30004000, LENGTH = 16K
+    /* v2.0：外部 SDRAM（EXMC SDRAM device0，13行×9列×4bank×16bit = 32MB）
+     * 此前缺失导致 malloc.c 的 SET_SDRAM 池（mem2base/mem2mapbase）被并入
+     * AXISRAM 溢出，链接从未成功 */
+    SDRAM (xrw)   : ORIGIN = 0xC0000000, LENGTH = 32M
 }
 
 /* Sections */
@@ -208,6 +212,20 @@ SECTIONS
         _esram1 = .;        /* define a global symbol at sram1 end */
 
     } >SRAM1 AT> FLASH
+
+    /* v2.0：外部 SDRAM 数据段（malloc.c SET_SDRAM：mem2base/mem2mapbase）。
+     * 注意段名为 "SDRAM"（public.h 的 SET_AREA 宏展开不含前导点）。
+     * NOLOAD：SDRAM 由 sdram_init() 在 main() 中初始化，启动代码不做拷贝/清零；
+     * 这些符号仅在 sdram_init 之后的 my_mem_init 中被访问，无竞争风险。 */
+    .SDRAM (NOLOAD) :
+    {
+        . = ALIGN(64);
+        .ssdram = .;
+        *(SDRAM)
+        *(SDRAM*)
+        . = ALIGN(4);
+        _esdram = .;
+    } >SDRAM
 
     /* Remove information from the compiler libraries */
     /DISCARD/ :

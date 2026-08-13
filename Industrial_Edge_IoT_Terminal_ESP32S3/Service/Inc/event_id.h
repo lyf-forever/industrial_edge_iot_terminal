@@ -47,6 +47,13 @@ typedef enum {
     EVT_SYS_OTA_REQ       = 0x0402,   /* OTA 升级请求 */
     EVT_SYS_REBOOT        = 0x0403,   /* 重启 (本地/远程) */
     EVT_SYS_TIME_SYNC     = 0x0404,   /* 跨核时间同步 */
+    EVT_SYS_OTA_RESULT    = 0x0405,   /* OTA 结果 (payload=ota_result_t) */
+    EVT_SYS_LOG           = 0x0406,   /* 日志事件 (payload=日志文本) */
+    EVT_SYS_ACL_DENIED    = 0x0407,   /* 权限拒绝告警 */
+
+    /* ---- 传感器域扩展（边缘 AI） ---- */
+    EVT_SENSOR_ANOMALY    = 0x0103,   /* 异常检测结果 (payload=anomaly_t) */
+    EVT_KWS               = 0x0104,   /* 唤醒词命中 */
 
     EVT_MAX = 0xFFFF
 } event_id_t;

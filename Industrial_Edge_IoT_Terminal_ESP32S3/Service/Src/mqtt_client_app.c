@@ -14,11 +14,15 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#if CredUse
+#include "cred_mgr.h"
+#endif
+#include <stdio.h>
 #include <string.h>
 
 static const char *TAG = "mqtt_app";
 
-static esp_mqtt_client_t s_client = NULL;
+static esp_mqtt_client_handle_t s_client = NULL;
 static bool s_connected = false;
 static mqtt_msg_cb_t s_msg_cb = NULL;
 static void *s_msg_cb_user = NULL;
@@ -65,17 +69,62 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
 void mqtt_client_app_init(void *arg)
 {
     (void)arg;
-    const esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = MQTT_BROKER_URI,
-        .credentials.client_id = MQTT_CLIENT_ID,
+
+    /* 架构 3.12：凭证从凭证管理器读取（NVS），默认值首启写入 */
+    char uri[96] = MQTT_BROKER_URI;
+    char client_id[48] = MQTT_CLIENT_ID;
+#if CredUse
+    char cred_buf[CRED_DATA_MAX];
+    int16_t n = cred_load_str(CRED_MQTT_URI, cred_buf, sizeof(cred_buf));
+    if (n > 0) {
+        snprintf(uri, sizeof(uri), "%.95s", cred_buf);
+    }
+    n = cred_load_str(CRED_MQTT_CLIENTID, cred_buf, sizeof(cred_buf));
+    if (n > 0) {
+        snprintf(client_id, sizeof(client_id), "%.47s", cred_buf);
+    }
+#endif
+
+    esp_mqtt_client_config_t mqtt_cfg = {
+        .broker.address.uri = uri,
+        .credentials.client_id = client_id,
     };
+
+    /* 架构 3.12b：TLS 上云完整实现
+     * 启用条件：broker URI 为 mqtts:// 且 NVS "creds" 中存在证书。
+     * 证书写入方式：
+     *   1) cred_mgr API：cred_store("tls_ca", pem, len) 等；
+     *   2) 云端命令 CMD_CRED_UPDATE 下发（见 cmd_dispatcher）。 */
+#if CredUse
+    {
+        static char ca_pem[2048], cert_pem[2048], key_pem[2048];
+        bool use_tls = (strncmp(uri, "mqtts://", 8) == 0);
+        if (use_tls) {
+            int16_t ca_len = cred_load("tls_ca", (uint8_t *)ca_pem, sizeof(ca_pem));
+            if (ca_len > 0) {
+                mqtt_cfg.broker.verification.certificate = ca_pem;
+                ESP_LOGI(TAG, "TLS CA loaded (%d bytes)", ca_len);
+            }
+            int16_t crt_len = cred_load("tls_cert", (uint8_t *)cert_pem, sizeof(cert_pem));
+            int16_t key_len = cred_load("tls_key", (uint8_t *)key_pem, sizeof(key_pem));
+            if (crt_len > 0 && key_len > 0) {
+                mqtt_cfg.credentials.authentication.certificate = cert_pem;
+                mqtt_cfg.credentials.authentication.key = key_pem;
+                ESP_LOGI(TAG, "TLS client cert loaded (%d/%d bytes)", crt_len, key_len);
+            } else {
+                ESP_LOGW(TAG, "mqtts:// URI but client cert missing; server-auth only");
+            }
+        }
+    }
+#endif
+
     s_client = esp_mqtt_client_init(&mqtt_cfg);
     if (s_client == NULL) {
         ESP_LOGE(TAG, "esp_mqtt_client_init failed");
         return;
     }
     esp_mqtt_client_register_event(s_client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
-    ESP_LOGI(TAG, "MQTT client init done, broker=%s", MQTT_BROKER_URI);
+    ESP_LOGI(TAG, "MQTT client init done, broker=%s", uri);
 }
 
 void mqtt_client_app_start(void *arg)

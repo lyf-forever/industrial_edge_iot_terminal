@@ -15,7 +15,12 @@
 - **跨核事件桥接（`Service/event_ipc`）**：本地事件 ⇄ link 帧互转，实现"跨核透明"分发
 - **连接层次状态机（`Service/conn_hsm`）**：HSM 管理全链路连接状态，驱动 WS2812 状态灯
 - 云端桥接服务（`Service/cloud_bridge`）：基于事件总线，传感器/告警⇄MQTT JSON 路由
-- 通过 `System/` 配置宏开关功能，例如 `SensorUse`、`Mq2Use`、`LinkUse`、`WiFiUse`、`MqttUse`、`CloudUse`、`EventBusUse`、`HsmUse`、`Ws2812Use`
+- **OTA 下载闭环（`Service/ota_downloader` + `ota_mgr`）**：esp_http_client 下载 → 校验 → A/B 分区切换 → 回滚（分区表见 `partitions_ota.csv`）
+- **HS-SPI 双链路冗余（`Service/channel_spi` + `channel`）**：UART + SPI 双通道，心跳超时热切换
+- **安全凭证管理（`Service/cred_mgr`）**：NVS 集中管理 Wi-Fi/MQTT/TLS 凭证，wifi/mqtt 启动自动读取
+- **主题化订阅（`Service/topic`）**：分层主题 + 前缀通配，接入跨核事件流
+- **宏组合编译期校验（`System/Inc/config_verify.h`）**：功能开关依赖一致性 #error 校验
+- 通过 `System/` 配置宏开关功能，例如 `SensorUse`、`Mq2Use`、`LinkUse`、`WiFiUse`、`MqttUse`、`CloudUse`、`EventBusUse`、`HsmUse`、`Ws2812Use`、`OtaUse`、`ChannelSpiUse` 等
 
 ## 软件架构（与整机设计对齐）
 
@@ -88,8 +93,23 @@ Industrial_Edge_IoT_Terminal_ESP32S3/
 | `CloudUse`    | 是否启用云端桥接服务（依赖 LinkUse 与 MqttUse） | 0/1 |
 | `EventBusUse` | 是否启用事件总线（系统级消息中枢） | 0/1 |
 | `HsmUse`     | 是否启用连接层次状态机 | 0/1 |
+| `ModRegUse`  | 架构3.1 模块注册表与依赖拓扑排序 | 0/1 |
+| `MemPoolUse` | 架构3.6 内存池/对象池 | 0/1 |
+| `SoftTimerUse` | 架构3.8 软定时器轮 | 0/1 |
+| `ChannelUse` | 架构3.3 通道抽象 | 0/1 |
+| `ChannelSpiUse` | 架构3.3b HS-SPI 真实通道（0=占位 stub） | 0/1 |
+| `CmdUse`     | 架构3.7 命令分发器 | 0/1 |
+| `HsmFwUse`   | 架构3.10 通用 HSM 框架 | 0/1 |
+| `LogUse`     | 架构3.9 结构化日志 | 0/1 |
+| `TtsUse`     | 架构3.5 时间触发调度器 | 0/1 |
+| `ActorUse`   | 架构3.4 Actor 模型 | 0/1 |
+| `TopicUse`   | 架构3.2 主题化订阅 | 0/1 |
+| `CredUse`    | 架构3.12 凭证管理器 | 0/1 |
+| `OtaUse`     | 架构3.11 A/B 分区 OTA | 0/1 |
+| `AiUse`      | 架构3.13 边缘 AI 推理管线 | 0/1 |
 
 > 修改功能开关后需在 `sys.h` 中调整，并通过 `initTable` / `taskTable` 条件编译自动裁剪对应模块。
+> 依赖组合由 `System/Inc/config_verify.h` 编译期校验（如 MqttUse=1 必须 WiFiUse=1）。
 
 ## 跨核共享契约（两端正协同）
 

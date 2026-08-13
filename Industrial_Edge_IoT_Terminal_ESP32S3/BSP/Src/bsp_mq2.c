@@ -4,6 +4,7 @@
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "esp_adc_cal.h"
+#include <math.h>
 
 static float mq2_cal_ro = 0.0f;
 /* ADC 特性结构体，全局保存避免泄漏 */
@@ -17,7 +18,7 @@ static esp_adc_cal_characteristics_t mq2_adc_chars;
  * 作者：Lyf
  * 备注：无
  ******************************************************************/
-void mq2_drv_init(void)
+void mq2_drv_init(void *arg)
 {
     /* 配置ADC分辨率 */
     adc1_config_width(MQ2_ADC_BITWIDTH);  // 12位分辨率
@@ -101,7 +102,7 @@ float mq2_getConcentration(void)
     uint16_t rawVal = mq2_get_rawValue();
     float rs = 0.0f;
     /* 计算电压 (V) */
-    float vrl = (float)rawVal / (float)(1 << MQ2_ADC_BITWIDTH - 1) * MQ2_VREF;
+    float vrl = (float)rawVal / (float)(1 << (MQ2_ADC_BITWIDTH - 1)) * MQ2_VREF;
     /* 计算传感器电阻 Rs (kΩ) */
     if (vrl > 0.01f) 
         rs = (MQ2_VC - vrl) * MQ2_RL / vrl;
@@ -122,7 +123,7 @@ float mq2_getConcentration(void)
 ******************************************************************/
 uint16_t mq2_getPercentage(void)
 {
-    uint16_t adc_max = 1 << MQ2_ADC_BITWIDTH - 1;
+    uint16_t adc_max = 1 << (MQ2_ADC_BITWIDTH - 1);
     uint16_t adc_new = 0;
     uint16_t Percentage_value = 0;
 

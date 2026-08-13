@@ -50,6 +50,9 @@ typedef struct {
 #if EventBusUse && LinkUse
 #define TASK_EVENT_IPC_STK_SIZE 3072    /* 跨核事件桥接任务栈深 */
 #endif
+#if AiUse
+#define TASK_AI_STK_SIZE        4096    /* 边缘 AI 推理任务栈深 */
+#endif
 
 /* ===================== 任务优先级宏定义 ===================== */
 #define TASK_START_PRIO         3       /* 开始任务优先级 */
@@ -68,6 +71,9 @@ typedef struct {
 #if EventBusUse && LinkUse
 #define TASK_EVENT_IPC_PRIO     5       /* 跨核事件桥接任务优先级 */
 #endif
+#if AiUse
+#define TASK_AI_PRIO            3       /* 边缘 AI 推理任务优先级 */
+#endif
 
 /* ===================== API 声明 ===================== */
 
@@ -82,5 +88,8 @@ void StartTask(void *pvParameters);
 
 /* 传感器任务（本地 MQ2 采样） */
 void SensorTask(void *pvParameters);
+
+/* 边缘 AI 推理任务（架构 3.13 状态巡检） */
+void AiTask(void *pvParameters);
 
 #endif /* __APP_TASKS_H_ */

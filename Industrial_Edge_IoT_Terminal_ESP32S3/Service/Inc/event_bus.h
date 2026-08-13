@@ -15,8 +15,9 @@
  *  - 跨核转发由 event_ipc 作为特殊订阅者接管（订阅 EVT_REMOTE_WILDCARD）；
  *  - 防环：跨核转发的回调携带 source=REMOTE，本地发布时不再回发。
  *
- * 线程安全：发布/订阅均持互斥锁。回调内禁止阻塞/再次发布同事件(可重入
- * 但不推荐)。中断上下文请使用 event_bus_publish_isr。
+ * 线程安全：发布/订阅均持互斥锁。回调内禁止再次发布事件（v2.0 已加
+ * 运行时重入检测并告警，重入发布被拒绝以避免普通 Mutex 死锁）。
+ * 中断上下文请使用 event_bus_publish_isr（经队列延迟到后台任务分发）。
  */
 
 #include <stdint.h>
@@ -85,6 +86,11 @@ static inline int event_bus_publish_local(uint16_t event_id,
 {
     return event_bus_publish(event_id, EVENT_ORIENT_LOCAL, payload, len, 0);
 }
+
+/* ISR 安全发布（v2.0 落地）：中断上下文中调用，事件入队后由后台
+ * bridge 任务延迟分发；返回 0=已入队 -1=失败（队列满或未初始化）。
+ * 注意：payload 必须为 ISR 上下文稳定的内存（勿传 ISR 栈/临时缓冲）。 */
+int event_bus_publish_isr(uint16_t event_id, const uint8_t *payload, uint8_t len);
 
 #endif /* EventBusUse */
 

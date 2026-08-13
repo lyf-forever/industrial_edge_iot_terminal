@@ -12,10 +12,18 @@
 /* For GCC (arm-none-eabi-gcc) we do not need special pragmas to disable semihosting.
    Instead, we provide our own _write function (and optionally other system calls). */
 
+/* USART0 是否已初始化。main 仅初始化 UART3(BT24)/SPI2 链路，USART0 未初始化时
+ * TC 标志永远不置位，原实现会让 printf 死等（log_export_all 每秒触发一次，系统必挂）。
+ * 未初始化时丢弃输出，避免阻塞主循环。 */
+static volatile uint8_t usart0_ready = 0;
+
 /* Redefine _write function, which is called by printf (and other stdio functions) */
 int _write(int file, char *ptr, int len)
 {
     int i;
+    if (!usart0_ready) {
+        return len;   /* USART0 未初始化：丢弃输出，不得阻塞 */
+    }
     for (i = 0; i < len; i++) {
         /* Wait for the previous character to be sent */
         while (RESET == usart_flag_get(USART_PERIPH, USART_FLAG_TC));
@@ -173,6 +181,7 @@ void usart_init(uint32_t baudrate)
     usart_interrupt_enable(USART_PERIPH, USART_INT_IDLE);
     /* 7. 使能DMA通道 先开启接收DMA，让它时刻准备接收 */
     dma_channel_enable(USART_RX_DMA_PERIPH, USART_RX_DMA_CH);
+    usart0_ready = 1;   /* 允许 printf 输出 */
 }
 
 /**

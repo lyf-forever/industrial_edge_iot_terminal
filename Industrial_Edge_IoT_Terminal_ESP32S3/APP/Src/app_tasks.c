@@ -24,6 +24,18 @@
 #if EventBusUse && LinkUse
 #include "event_ipc.h"
 #endif
+#if TtsUse
+#include "tts.h"
+#endif
+#if ActorUse
+#include "actor.h"
+#endif
+#if AiUse
+#include "ai_pipeline.h"
+#endif
+#if EventBusUse
+#include "event_bus.h"
+#endif
 #include "esp_log.h"
 #include <stdio.h>
 
@@ -42,12 +54,77 @@ static TaskHandle_t xCloudTaskHandle   = NULL;
 #if EventBusUse && LinkUse
 static TaskHandle_t xEventIpcTaskHandle = NULL;
 #endif
+#if AiUse
+static TaskHandle_t xAiTaskHandle      = NULL;
+#endif
+
+/* ===================== TTS 演示回调（架构 3.5） ===================== *
+ * 每 1000ms 触发一次心跳事件（体现时间触发调度的确定性分发）。
+ * */
+#if TtsUse && EventBusUse
+static void tts_heartbeat_cb(void *user)
+{
+    (void)user;
+    event_bus_publish_any(EVT_SYS_HEARTBEAT, NULL, 0);
+}
+#endif
+
+/* ===================== Actor 演示（架构 3.4） ===================== *
+ * 日志落盘 Actor：收到消息打印。真实场景可替换为 OTA 写盘等。
+ * */
+#if ActorUse
+static actor_handle_t s_log_actor = NULL;
+static void log_actor_handler(void *ctx, const actor_msg_t *msg)
+{
+    (void)ctx;
+    ESP_LOGI(TAG, "actor[log] msg_id=%u len=%u", msg->msg_id, msg->payload_len);
+}
+#endif
 
 /* 系统初始化（任务创建前的软件初始化钩子） */
 void System_Init(void)
 {
-    /* 当前为空，可在该处添加非 init 表覆盖的软件初始化逻辑 */
+#if TtsUse && EventBusUse
+    /* 注册时间触发调度槽：1s 周期心跳 */
+    const tts_slot_t slot = {
+        .period_ticks = 1000,
+        .phase = 0,
+        .fn = tts_heartbeat_cb,
+        .user = NULL,
+    };
+    tts_register(&slot);
+#endif
+
+#if ActorUse
+    /* 创建日志落盘 Actor（消息隔离） */
+    static const actor_desc_t desc = {
+        .name = "logActor",
+        .handler = log_actor_handler,
+        .queue_len = 8,
+        .stack_bytes = 2048,
+        .priority = 3,
+        .core = tskNO_AFFINITY,
+        .wdt_secs = 0,
+    };
+    s_log_actor = actor_create(&desc);
+#endif
 }
+
+/* ===================== AI 推理任务（架构 3.13） ===================== *
+ * 周期发布一次 AI 处理完成事件（推理本身在事件回调中完成）。
+ * */
+#if AiUse
+void AiTask(void *pvParameters)
+{
+    (void)pvParameters;
+    ESP_LOGI(TAG, "AI task started");
+    while (1) {
+        /* 推理管线已订阅 EVT_SENSOR_DATA 自动触发；
+         * 本任务仅作状态巡检与降级保护 */
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
+}
+#endif
 
 /* ===================== 任务注册表 ===================== *
  * 仅 worker 任务，StartTask 负责创建这些任务。
@@ -68,6 +145,10 @@ static const taskItem taskTable[] = {
 #if SensorUse
     TASK_ITEM(SensorTask, "sensorTask", TASK_SENSOR_STK_SIZE,
               NULL, TASK_SENSOR_PRIO, 1, &xSensorTaskHandle),
+#endif
+#if AiUse
+    TASK_ITEM(AiTask, "aiTask", TASK_AI_STK_SIZE,
+              NULL, TASK_AI_PRIO, tskNO_AFFINITY, &xAiTaskHandle),
 #endif
 };
 
@@ -127,9 +208,10 @@ void StartTask(void *pvParameters)
     (void)pvParameters;
 
     /* worker 任务已在 taskTable 静态声明，直接批量创建 */
-    taskENTER_CRITICAL();
+    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+    portENTER_CRITICAL(&mux);
     App_Tasks_Create();
-    taskEXIT_CRITICAL();
+    portEXIT_CRITICAL(&mux);
 
     ESP_LOGI(TAG, "StartTask done, deleting self");
     vTaskDelete(NULL);
@@ -163,7 +245,11 @@ void SensorTask(void *pvParameters)
         sp.gas_ppm = (uint16_t)ppm_u;
         sp.co2_ppm = 0;
         sp.pressure_hpa = 0;
-        event_bus_publish_any(EVT_SENSOR_DATA, (const uint8_t *)&sp, sizeof(sp));
+        /* v2.0：事件总线载荷上限 EVENT_PAYLOAD_MAX(9) 字节——
+         * 结构体 sizeof=12 仅供 link 帧 data[12] 全量传输使用，
+         * 经事件总线发布只取前 9 字节（跨核 event_payload_t.payload[9] 语义），
+         * 避免 event_bus_publish 内部隐式截断导致下游按 12B 越界读取。 */
+        event_bus_publish_any(EVT_SENSOR_DATA, (const uint8_t *)&sp, EVENT_PAYLOAD_MAX);
 
         /* 越限告警事件 */
         if (ppm_u > 1000) {
@@ -171,7 +257,7 @@ void SensorTask(void *pvParameters)
             ap.alarm_id = 1;
             ap.alarm_level = (ppm_u > 2000) ? 2 : 1;
             ap.sensor_val = (uint16_t)ppm_u;
-            event_bus_publish_any(EVT_SENSOR_ALARM, (const uint8_t *)&ap, sizeof(ap));
+            event_bus_publish_any(EVT_SENSOR_ALARM, (const uint8_t *)&ap, EVENT_PAYLOAD_MAX);
         }
 #else
         if (ppm_u > 1000) {

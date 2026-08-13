@@ -1,0 +1,36 @@
+# ESP32S3 默认配置（sdkconfig.defaults）
+# OTA A/B 分区（启用软件架构 3.11 需此配置；如不用 OTA 可删除后 idf.py fullclean）
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_ota.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions_ota.csv"
+
+# Flash 容量 16MB（OTA A/B 分区表需 9.5MB）
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+
+# 双核 / 240MHz
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=240
+
+# 日志级别
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+
+# ==================== IRAM 裁剪（2026-08-12） ====================
+# 背景：ESP32-S3 IRAM 仅 16KB，原配置 100% 占满（链接无余量）。
+# 1) 编译优化 -Og(调试) -> -Os(尺寸)：所有可源码编译组件代码体积压缩 20-40%
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+# 2) WiFi/PHY 函数移出 IRAM（放 flash）：省约 3-5KB IRAM。
+#    代价：OTA 写 flash 期间 WiFi 存在瞬断风险（RX 路径由 RX_IRAM_OPT 覆盖）。
+#    若实测 WiFi 掉线，请优先恢复 CONFIG_ESP_WIFI_IRAM_OPT=y
+CONFIG_ESP_WIFI_IRAM_OPT=n
+CONFIG_ESP_WIFI_RX_IRAM_OPT=n
+CONFIG_ESP_PHY_IRAM_OPT=n
+# 3) 未使用外设的 ISR 处理函数移出 IRAM（GPTIMER/I2C/MCPWM/SPI从机 均未使用；
+#    如需启用请恢复对应项，缓存开启时从 flash 取指无问题）
+#    注：FREERTOS_IN_IRAM / LOG_IN_IRAM / GDMA_ISR 为隐藏项或被驱动 select 强制，无法关闭
+CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM=n
+CONFIG_I2C_MASTER_ISR_HANDLER_IN_IRAM=n
+CONFIG_MCPWM_ISR_HANDLER_IN_IRAM=n
+CONFIG_SPI_SLAVE_ISR_HANDLER_IN_IRAM=n
+# 5) RMT(WS2812) 编码器/ISR 移出 IRAM（灯带仅在任务上下文使用，无 cache-off 场景）
+CONFIG_RMT_ENCODER_FUNC_IN_IRAM=n
+CONFIG_RMT_TX_ISR_HANDLER_IN_IRAM=n
+CONFIG_RMT_RX_ISR_HANDLER_IN_IRAM=n

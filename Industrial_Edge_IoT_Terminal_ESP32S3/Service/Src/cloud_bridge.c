@@ -36,6 +36,15 @@
 #include "link_protocol.h"
 #include "bsp_uart.h"
 #endif
+#if CmdUse
+#include "cmd_dispatcher.h"
+#endif
+#if CredUse
+#include "cred_mgr.h"
+#endif
+#if OtaUse
+#include "ota_mgr.h"
+#endif
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -109,6 +118,91 @@ static void on_heartbeat(uint16_t event_id, const uint8_t *payload,
 }
 #endif /* EventBusUse */
 
+/* ===================== 命令处理器（供命令分发器调用） ============== *
+ * 由 cmd_dispatcher 的命令表注册；通过事件总线发布控制事件。
+ * */
+#if CmdUse
+void cmd_handler_led(const uint8_t *argv, uint8_t argc)
+{
+    (void)argc;
+    if (argv == NULL) return;
+    /* argv 为 JSON 片段 {"cmd":"led","id":1,"state":1}，简单解析 */
+    led_ctrl_payload_t led = {0};
+    char buf[64];
+    int cp = argc < (int)sizeof(buf) - 1 ? argc : (int)sizeof(buf) - 1;
+    memcpy(buf, argv, cp);
+    buf[cp] = '\0';
+    char *p_id    = strstr(buf, "\"id\":");
+    char *p_state = strstr(buf, "\"state\":");
+    if (p_id)    led.led_id    = (uint8_t)atoi(p_id + 5);
+    if (p_state) led.led_state = (uint8_t)atoi(p_state + 8);
+    event_bus_publish_any(EVT_CTRL_LED, (const uint8_t *)&led, sizeof(led));
+    ESP_LOGI(TAG, "CMD led (id=%d state=%d)", led.led_id, led.led_state);
+}
+
+void cmd_handler_reboot(const uint8_t *argv, uint8_t argc)
+{
+    (void)argv; (void)argc;
+    event_bus_publish_any(EVT_SYS_REBOOT, NULL, 0);
+    ESP_LOGI(TAG, "CMD reboot");
+}
+
+void cmd_handler_get_status(const uint8_t *argv, uint8_t argc)
+{
+    (void)argv; (void)argc;
+    uint8_t st = 1;
+    event_bus_publish_local(EVT_SYS_STATUS, &st, 1);
+    ESP_LOGI(TAG, "CMD get_status");
+}
+
+#if CredUse
+/* 凭证更新命令：{"cred":"tls_ca","data":"<pem 内容>"}
+ * 解析后写入 NVS（架构 3.12：云端下发证书/凭证轮换）。 */
+void cmd_handler_cred_update(const uint8_t *argv, uint8_t argc)
+{
+    if (argv == NULL || argc == 0) return;
+    char buf[1024];
+    int cp = argc < (int)sizeof(buf) - 1 ? argc : (int)sizeof(buf) - 1;
+    memcpy(buf, argv, cp);
+    buf[cp] = '\0';
+
+    char *p_cred = strstr(buf, "\"cred\":\"");
+    char *p_data = strstr(buf, "\"data\":\"");
+    if (p_cred == NULL || p_data == NULL) {
+        ESP_LOGW(TAG, "CMD cred_update: bad format");
+        return;
+    }
+    char name[32];
+    char *name_end = strchr(p_cred + 8, '"');
+    if (name_end == NULL || (name_end - (p_cred + 8)) >= (int)sizeof(name)) {
+        return;
+    }
+    memcpy(name, p_cred + 8, (size_t)(name_end - (p_cred + 8)));
+    name[name_end - (p_cred + 8)] = '\0';
+
+    char *data = p_data + 8;
+    char *data_end = strchr(data, '"');
+    if (data_end == NULL) return;
+    int data_len = (int)(data_end - data);
+    if (data_len <= 0 || data_len > CRED_DATA_MAX) {
+        ESP_LOGW(TAG, "CMD cred_update: bad data len=%d", data_len);
+        return;
+    }
+    if (cred_store(name, (const uint8_t *)data, (uint16_t)data_len)) {
+        ESP_LOGI(TAG, "CMD cred_update: %s stored (%d bytes)", name, data_len);
+    } else {
+        ESP_LOGE(TAG, "CMD cred_update: store failed");
+    }
+}
+#else
+void cmd_handler_cred_update(const uint8_t *argv, uint8_t argc)
+{
+    (void)argv; (void)argc;
+    ESP_LOGW(TAG, "CMD cred_update: CredUse disabled");
+}
+#endif /* CredUse */
+#endif /* CmdUse */
+
 /* ===================== 下行：MQTT 消息回调 -> 发布事件 ============= */
 #if MqttUse
 static void on_mqtt_msg(const char *topic, const char *data, int data_len, void *user_data)
@@ -121,23 +215,49 @@ static void on_mqtt_msg(const char *topic, const char *data, int data_len, void 
     memcpy(buf, data, cp);
     buf[cp] = '\0';
 
+#if CmdUse
+    /* 架构 3.7：命令分发器查表路由（取代 strstr 硬编码分支） */
+    {
+        uint16_t cmd_id = 0;
+        if      (strstr(buf, "\"led\"")    != NULL) cmd_id = CMD_LED_CTRL;
+        else if (strstr(buf, "\"reboot\"") != NULL) cmd_id = CMD_REBOOT;
+        else if (strstr(buf, "\"status\"") != NULL) cmd_id = CMD_GET_STATUS;
+        else if (strstr(buf, "\"ota\"")    != NULL) cmd_id = CMD_OTA_START;
+
+        if (cmd_id != 0) {
+            int r = cmd_dispatch(cmd_id, (const uint8_t *)buf, (uint8_t)cp,
+                                 CMD_AUTH_CLOUD);
+            if (r == 1) {
+                ESP_LOGW(TAG, "cmd 0x%02X not registered", cmd_id);
+            }
+#if OtaUse
+            if (cmd_id == CMD_OTA_START && r == 0) {
+                /* OTA 启动：从 JSON 提取 URL，独立任务执行完整下载循环
+                 * （避免阻塞 MQTT 回调上下文） */
+                char *p_url = strstr(buf, "\"url\":\"");
+                if (p_url) {
+                    char url[96];
+                    char *end = strchr(p_url + 7, '"');
+                    if (end && (end - (p_url + 7)) < (int)sizeof(url)) {
+                        memcpy(url, p_url + 7, (size_t)(end - (p_url + 7)));
+                        url[end - (p_url + 7)] = '\0';
+                        static char ota_url[96];
+                        snprintf(ota_url, sizeof(ota_url), "%s", url);
+                        extern void ota_download_task(void *arg);
+                        xTaskCreate(ota_download_task, "otaTask", 8192,
+                                    ota_url, 8, NULL);
+                    }
+                }
+            }
+#endif
+            return;
+        }
+    }
+#endif /* CmdUse */
+
 #if EventBusUse
-    /* LED 控制命令 {"cmd":"led","id":1,"state":1} -> 发布 EVT_CTRL_LED(跨核) */
-    if (strstr(buf, "\"led\"") != NULL) {
-        led_ctrl_payload_t led = {0};
-        char *p_id    = strstr(buf, "\"id\":");
-        char *p_state = strstr(buf, "\"state\":");
-        if (p_id)    led.led_id    = (uint8_t)atoi(p_id + 5);
-        if (p_state) led.led_state = (uint8_t)atoi(p_state + 8);
-        /* 发布控制事件，event_ipc 自动跨核转发到 GD32H7 */
-        event_bus_publish_any(EVT_CTRL_LED, (const uint8_t *)&led, sizeof(led));
-        ESP_LOGI(TAG, "publish EVT_CTRL_LED (id=%d state=%d)", led.led_id, led.led_state);
-    } else if (strstr(buf, "\"reboot\"") != NULL) {
-        /* 发布系统重启事件 */
-        event_bus_publish_any(EVT_SYS_REBOOT, NULL, 0);
-        ESP_LOGI(TAG, "publish EVT_SYS_REBOOT");
-    } else if (strstr(buf, "\"display\"") != NULL) {
-        /* 发布显示更新事件 */
+    /* 其余命令（如 display）直接发布事件 */
+    if (strstr(buf, "\"display\"") != NULL) {
         event_bus_publish_any(EVT_CTRL_DISPLAY, (const uint8_t *)buf, cp);
     }
 #else

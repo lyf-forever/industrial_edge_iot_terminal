@@ -10,9 +10,10 @@
 #define LOG_LEVEL_INFO   2
 #define LOG_LEVEL_DEBUG  3
 
-// 日志条目头部（紧凑对齐）
-typedef struct {
-    uint32_t timestamp;   // 系统 tick 或 CPU 周期
+// 日志条目头部（紧凑对齐；v2.0：显式 packed + 字段名与 ESP32S3 log_fw.h 统一，
+// 保证跨核统一解析按字段名不失效）
+typedef struct __attribute__((packed)) {
+    uint32_t ts;          // 系统 tick 或 CPU 周期（原 timestamp，对齐 ESP32S3）
     uint16_t line;        // 代码行号
     uint8_t  level;       // 日志级别
     uint8_t  len;         // 消息长度（不含 '\0'）

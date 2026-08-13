@@ -28,7 +28,7 @@
 /*==============================================*
  *      函数实现
  *----------------------------------------------*/
-void ws2812_init(void);
+void ws2812_init(void *arg);
 void ws2812_writeRainbow(void);
 void ws2812_writeGRB(uint8_t g, uint8_t r, uint8_t b);
 void ws2812_on(void);

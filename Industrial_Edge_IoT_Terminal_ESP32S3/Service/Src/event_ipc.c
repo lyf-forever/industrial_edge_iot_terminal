@@ -21,6 +21,9 @@
 #include "link_protocol.h"
 #include "link_payload.h"
 #include "bsp_uart.h"
+#if ChannelUse
+#include "channel.h"
+#endif
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -66,7 +69,12 @@ static void on_event_for_remote(uint16_t event_id, const uint8_t *payload,
                                 data, LINK_MAX_DATA_LEN,
                                 frame, sizeof(frame));
     if (flen > 0) {
+#if ChannelUse
+        /* 架构 3.3：经通道抽象发送（可热切换 UART/SPI） */
+        channel_send(frame, flen);
+#else
         bsp_uart_send(frame, flen);
+#endif
         s_tx_cnt++;
     } else {
         ESP_LOGW(TAG, "build_frame failed evt=0x%04X", event_id);
@@ -102,6 +110,11 @@ static bool on_link_frame(uint8_t addr, uint8_t cmd,
         /* 投递到本地总线(source=1 远端)，仅本地分发(防环) */
         event_bus_publish(ep.event_id, EVENT_ORIENT_LOCAL,
                           ep.payload, sizeof(ep.payload), 1);
+#if TopicUse
+        /* 架构 3.2：主题化订阅——同时向字符串主题订阅者分发 */
+        extern bool topic_dispatch(uint16_t, const uint8_t *, uint8_t, uint8_t, void *);
+        topic_dispatch(ep.event_id, ep.payload, sizeof(ep.payload), 1, NULL);
+#endif
         s_rx_cnt++;
         ESP_LOGI(TAG, "RX evt=0x%04X from remote", ep.event_id);
         return true;
@@ -138,10 +151,15 @@ static bool on_link_frame(uint8_t addr, uint8_t cmd,
 void event_ipc_init(void *arg)
 {
     (void)arg;
-    /* 接管 UART RX -> link 解析链路：收到的字节流喂入解析器，
+    /* 接管 RX -> link 解析链路：收到的字节流喂入解析器，
      * 解析到完整帧后调用 on_link_frame -> 本地总线投递 */
     link_parse_init(&s_link_ctx);
+#if ChannelUse
+    /* 架构 3.3：经通道抽象设置 RX 回调（活动通道） */
+    channel_set_rx_cb(on_uart_rx, &s_link_ctx);
+#else
     bsp_uart_set_rx_callback(on_uart_rx, &s_link_ctx);
+#endif
     /* 注册为总线通配订阅者，接管所有总线上需跨核转发的事件 */
     s_sub_remote = event_bus_subscribe_remote(on_event_for_remote, NULL);
     /* 注册 link 帧回调，收到的跨核事件经解码投递本地总线 */
@@ -160,11 +178,30 @@ void event_ipc_task(void *arg)
         /* 周期心跳事件，经总线驱动跨核心跳 */
         event_bus_publish_any(EVT_SYS_HEARTBEAT, NULL, 0);
 
-        /* 链路健康检测：超过阈值未收帧，发布链路 DOWN 事件 */
+        /* 链路健康检测：超过阈值未收帧，发布链路 DOWN 事件
+         * 并触发双链路热切换（主通道超时 -> 备用通道） */
         uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
         if (s_last_rx_tick != 0 && (now - s_last_rx_tick) > LINK_TIMEOUT_MS) {
             comm_state_payload_t cs = { .link_id = 2, .state = COMM_STATE_DOWN };
             event_bus_publish_local(EVT_COMM_LINK_STATE, (uint8_t *)&cs, sizeof(cs));
+#if ChannelUse
+            /* 架构 3.3：热切换——活动通道超时则切到下一通道（UART<->SPI 双链路冗余）
+             * v2.0：通道数动态查询，单链路配置（仅 UART）时不再尝试切换不存在的通道 */
+            int8_t active = channel_active_idx();
+            if (active >= 0) {
+                int8_t n = channel_count();
+                if (n > 1) {
+                    int8_t next = (active + 1) % n;
+                    if (next != active) {
+                        ESP_LOGW(TAG, "link timeout, switching channel %d -> %d",
+                                 active, next);
+                        channel_select(next);
+                    }
+                } else {
+                    ESP_LOGW(TAG, "link timeout, only 1 channel registered, no switch");
+                }
+            }
+#endif
         } else if (s_last_rx_tick != 0) {
             static bool up_reported = false;
             if (!up_reported) {

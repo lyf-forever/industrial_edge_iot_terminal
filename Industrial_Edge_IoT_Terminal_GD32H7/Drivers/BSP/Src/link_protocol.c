@@ -1,10 +1,19 @@
 #include "link_protocol.h"
-#include "bsp_8080_lcd.h"
 #include "gd32h7xx_gpio.h"
 #include "led.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
+/* 帧接收回调（默认 NULL，由 event_ipc 注册） */
+static link_frame_cb_t s_frame_cb = NULL;
+static void *s_frame_cb_user = NULL;
+
+void link_set_frame_callback(link_frame_cb_t cb, void *user_data)
+{
+    s_frame_cb = cb;
+    s_frame_cb_user = user_data;
+}
 
 static inline uint16_t crc16_modbus_update(uint16_t crc, uint8_t data)
 {
@@ -279,9 +288,35 @@ bool link_parse_byte(link_parse_ctx_t *ctx, uint8_t byte)
             break;
 
         case LINK_STATE_DATA:
-            ctx->data[ctx->data_index++] = byte;
-            if (ctx->data_index >= ctx->data_len) {
-                ctx->state = LINK_STATE_CRC1;
+            /* 支持字节转义：0xCC 前缀的转义序列在此解码（架构 3.2 双端互通要求） */
+            if (byte == 0xCC) {
+                ctx->state = LINK_STATE_DATA_ESC;
+            } else {
+                ctx->data[ctx->data_index++] = byte;
+                if (ctx->data_index >= ctx->data_len) {
+                    ctx->state = LINK_STATE_CRC1;
+                }
+            }
+            break;
+
+        case LINK_STATE_DATA_ESC:
+            /* 转义序列第二个字节：还原原始字节 */
+            switch (byte) {
+                case 0x01: ctx->data[ctx->data_index++] = 0xAA; break;
+                case 0x02: ctx->data[ctx->data_index++] = 0x55; break;
+                case 0x03: ctx->data[ctx->data_index++] = 0x0D; break;
+                case 0x04: ctx->data[ctx->data_index++] = 0x0A; break;
+                case 0xCC: ctx->data[ctx->data_index++] = 0xCC; break;
+                default:
+                    /* 非法转义序列：丢帧复位 */
+                    ctx->state = LINK_STATE_IDLE;
+                    break;
+            }
+            if (ctx->state == LINK_STATE_DATA_ESC) {
+                ctx->state = LINK_STATE_DATA;
+                if (ctx->data_index >= ctx->data_len) {
+                    ctx->state = LINK_STATE_CRC1;
+                }
             }
             break;
 
@@ -312,13 +347,16 @@ bool link_parse_byte(link_parse_ctx_t *ctx, uint8_t byte)
                 crcdata[2] = ctx->data_len;
                 memcpy(&crcdata[3], ctx->data, ctx->data_len);
                 ctx->crc_calc = crc16_modbus(crcdata, 3 + ctx->data_len);
-                
-                bsp_8080_lcd_clear(WHITE);
-                bsp_8080_lcd_printf("crc_calc:%04X\r\n", ctx->crc_calc);
-            
+                /* v2.0：移除每帧 LCD 刷屏调试残留（bsp_8080_lcd_clear/printf
+                 * 每次收帧全屏刷新，拖慢解析且干扰显示） */
                 if(ctx->crc_calc == ctx->crc_recv) {
                     gpio_bit_toggle(LED1_PORT, LED1_PIN);
-                    ctx->state = LINK_STATE_COMPLETE;
+                    ctx->state = LINK_STATE_IDLE;   /* 复位准备接收下一帧 */
+                    /* 通知上层回调（跨核事件桥接等） */
+                    if (s_frame_cb != NULL) {
+                        s_frame_cb(ctx->addr, ctx->cmd, ctx->data,
+                                   ctx->data_len, s_frame_cb_user);
+                    }
                     return true;   // 帧完整且CRC正确
                 }else {
                     // CRC错误，丢弃帧
@@ -337,18 +375,21 @@ bool link_parse_byte(link_parse_ctx_t *ctx, uint8_t byte)
 
 /**
  * @brief 解析缓冲区中的多个字节
- * @return true - 解析到完整帧  false - 未解析到完整帧
+ * @note  原实现解析到第一帧即 return，同一缓冲区内后续字节（可能含完整帧）
+ *        被直接丢弃，导致多帧同批到达时丢帧。改为解析完所有字节。
+ * @return true - 解析到至少一帧完整帧  false - 未解析到完整帧
  */
 bool link_parse_buffer(link_parse_ctx_t *ctx, const uint8_t *buffer, uint16_t len)
 {
     if (ctx == NULL || buffer == NULL) return false;
 
+    bool got_frame = false;
     for (uint16_t i = 0; i < len; i++) {
         if (link_parse_byte(ctx, buffer[i])) {
-            return true;
+            got_frame = true;
         }
     }
-    return false;
+    return got_frame;
 }
 
 

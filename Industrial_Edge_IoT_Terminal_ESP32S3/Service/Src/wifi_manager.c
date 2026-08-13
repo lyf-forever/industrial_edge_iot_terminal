@@ -18,6 +18,9 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#if CredUse
+#include "cred_mgr.h"
+#endif
 #include <string.h>
 
 static const char *TAG = "wifi_mgr";
@@ -100,20 +103,37 @@ void wifi_manager_init(void *arg)
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
                                                         &wifi_event_handler, NULL, &inst_got_ip));
 
+    /* 架构 3.12：凭证从凭证管理器读取（NVS），默认值首启写入 */
+    char ssid[32] = WIFI_MANAGER_SSID;
+    char psk[64] = WIFI_MANAGER_PASSWORD;
+#if CredUse
+    char cred_buf[CRED_DATA_MAX];
+    int16_t n = cred_load_str(CRED_WIFI_SSID, cred_buf, sizeof(cred_buf));
+    if (n > 0) {
+        snprintf(ssid, sizeof(ssid), "%.31s", cred_buf);
+    }
+    n = cred_load_str(CRED_WIFI_PSK, cred_buf, sizeof(cred_buf));
+    if (n > 0) {
+        snprintf(psk, sizeof(psk), "%.63s", cred_buf);
+    }
+#endif
+
     wifi_config_t wifi_cfg = {
         .sta = {
-            .ssid = WIFI_MANAGER_SSID,
-            .password = WIFI_MANAGER_PASSWORD,
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
             .scan_method = WIFI_FAST_SCAN,
         },
     };
+    strncpy((char *)wifi_cfg.sta.ssid, ssid, sizeof(wifi_cfg.sta.ssid) - 1);
+    wifi_cfg.sta.ssid[sizeof(wifi_cfg.sta.ssid) - 1] = '\0';   /* v2.0：显式补终止符 */
+    strncpy((char *)wifi_cfg.sta.password, psk, sizeof(wifi_cfg.sta.password) - 1);
+    wifi_cfg.sta.password[sizeof(wifi_cfg.sta.password) - 1] = '\0';
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "wifi_manager init done, connecting to SSID:%s", WIFI_MANAGER_SSID);
+    ESP_LOGI(TAG, "wifi_manager init done, connecting to SSID:%s", ssid);
 }
 
 bool wifi_manager_wait_connected(uint32_t timeout_ms)

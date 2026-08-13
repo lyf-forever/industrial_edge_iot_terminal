@@ -81,7 +81,7 @@ static size_t encoder_callback(const void *data, size_t data_size,
     }
 }
 
-void ws2812_init(void)
+void ws2812_init(void *arg)
 {
     ESP_LOGI(TAG, "Create RMT TX channel");
 

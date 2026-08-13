@@ -112,9 +112,13 @@ typedef struct __attribute__((packed)) {
     uint8_t  link_id;        /* 链路编号: 0=wifi 1=mqtt 2=link 3=ble */
     uint8_t  state;          /* comm_state_t */
     uint16_t reserved;
-    uint8_t  pad[6];
+    uint8_t  pad[8];
 } comm_state_payload_t;
 #pragma pack(pop)
+
+/* v2.0 补齐：通信状态载荷编译期固定位校验，防止未来字段调整改变跨核布局 */
+_Static_assert(sizeof(comm_state_payload_t) == LINK_MAX_DATA_LEN,
+                "comm_state_payload_t must be exactly LINK_MAX_DATA_LEN bytes");
 
 /* ===================== 便捷工具函数声明 ============================ */
 

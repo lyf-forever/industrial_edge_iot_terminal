@@ -11,7 +11,21 @@
 #define LINK_TAIL_1        0x0A
 
 #define LINK_MAX_DATA_LEN  12
-#define LINK_FRAME_OVERHEAD 8  // header[2] + addr + cmd + data_len + crc16 + tail[2]
+#define LINK_FRAME_OVERHEAD 9  // header[2] + addr + cmd + data_len + crc16 + tail[2] = 9
+
+/* 命令字（与 ESP32S3 端对齐） */
+typedef enum {
+    LINK_CMD_HEARTBEAT   = 0x00,   /* 心跳 */
+    LINK_CMD_SENSOR_DATA = 0x01,   /* 传感器数据上报 (GD32H7 -> ESP32S3) */
+    LINK_CMD_ALARM       = 0x02,   /* 报警事件 */
+    LINK_CMD_STATUS_REQ  = 0x03,   /* 状态查询 */
+    LINK_CMD_STATUS_RSP  = 0x04,   /* 状态回复 */
+    LINK_CMD_LED_CTRL    = 0x10,   /* LED 控制 (ESP32S3 -> GD32H7) */
+    LINK_CMD_DISPLAY     = 0x11,   /* 显示更新 */
+    LINK_CMD_REBOOT      = 0x12,   /* 远程重启 */
+    LINK_CMD_EVENT       = 0x20,   /* 跨核事件帧：data = event_payload */
+    LINK_CMD_TIME_SYNC   = 0x21    /* 跨核时间同步（v2.0 补齐，与 ESP32S3 对齐） */
+} link_cmd_t;
 
 /* 串口链路帧结构 */
 // 发送时构建帧（紧凑）
@@ -34,6 +48,7 @@ typedef enum {
     LINK_STATE_CMD,
     LINK_STATE_DATA_LEN,
     LINK_STATE_DATA,
+    LINK_STATE_DATA_ESC,        // 转义序列第二字节（0xCC 前缀解码）
     LINK_STATE_CRC1,
     LINK_STATE_CRC2,
     LINK_STATE_TAIL1,
@@ -68,5 +83,11 @@ bool validate_frame(const uint8_t *frame_data, uint16_t frame_len, uint8_t *addr
 void link_parse_init(link_parse_ctx_t *ctx);
 bool link_parse_byte(link_parse_ctx_t *ctx, uint8_t byte);
 bool link_parse_buffer(link_parse_ctx_t *ctx, const uint8_t *buffer, uint16_t len);
+
+/* 帧接收回调（解析到完整帧时调用，跨核事件桥接注册） */
+typedef bool (*link_frame_cb_t)(uint8_t addr, uint8_t cmd,
+                                const uint8_t *data, uint8_t data_len,
+                                void *user_data);
+void link_set_frame_callback(link_frame_cb_t cb, void *user_data);
 
 #endif /* LINK_PROTOCOL_H_ */

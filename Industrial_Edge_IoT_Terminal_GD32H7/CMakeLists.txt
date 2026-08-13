@@ -138,7 +138,7 @@ target_include_directories(${PROJECT_NAME}.elf PRIVATE
     # # ${FIRMWARE_DIR}/USBHS_Lib/ustd/class/msc
     # ${FIRMWARE_DIR}/USBHS_Lib/ustd/common               # USB官方库头文件路径-尾
     ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/BSP/Inc         # 用户驱动库头文件路径
-    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/System/Inc      # 系统级驱动库头文件路径
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/SYSTEM/Inc      # 系统级驱动库头文件路径
     ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/MCU/Inc         # MCU驱动库头文件路径
 )
 

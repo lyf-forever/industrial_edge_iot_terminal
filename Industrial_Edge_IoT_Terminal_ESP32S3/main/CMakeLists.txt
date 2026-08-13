@@ -23,4 +23,8 @@ idf_component_register(
                   mqtt
                   esp_adc
                   driver
+                  esp_timer
+                  app_update
+                  esp_system
+                  esp_http_client
 )

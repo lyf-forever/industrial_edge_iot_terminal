@@ -6,8 +6,12 @@
 
 - 基于 **GD32H7xx 标准外设库**（STD_Peripheral）与 CMSIS
 - 多种板级外设：8080 并口 LCD、LED、按键、SD 卡（SDRAM）、蓝牙（BT24 / HC05）、串口、CRC、MPU
-- 双缓冲 **DMA 串口接收** + 链路协议解析（`link_protocol`）
-- 环形缓冲日志系统（`log_ringbuf`）
+- 双缓冲 **DMA 串口接收** + 链路协议解析（`link_protocol`，含字节转义解码与帧回调）
+- 环形缓冲日志系统（`log_ringbuf`，头部与 ESP32S3 端 log_fw 兼容）
+- **事件总线 + 跨核事件桥接**（`SYSTEM/event_bus` / `event_ipc`）：与 ESP32S3 共享事件契约，跨核透明分发
+- **软定时器回调表**（`driver_tick_handle`，SysTick 驱动 1/10/100ms 三轮）
+- **双池内存分配器**（内部 SRAM + 外部 SDRAM，`malloc.c`）
+- **HS-SPI 从机链路**（`BSP/spi_slave_link`）：与 ESP32S3 SPI master 构成双链路冗余
 - 工程由 **CMake + arm-none-eabi-gcc** 构建
 
 ## 目录结构

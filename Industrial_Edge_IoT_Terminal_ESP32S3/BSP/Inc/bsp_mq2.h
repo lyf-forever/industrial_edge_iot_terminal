@@ -7,7 +7,6 @@
 
 #if Mq2Use  /* 使用MQ2气体浓度传感器 */
 /* ======================rel definition ============================*/
-#define TAG "MQ2"
 /* 硬件引脚与 ADC 配置 */
 #define MQ2_ADC_UNIT       ADC_UNIT_1          // 使用 ADC1
 #define MQ2_ADC_CHANNEL    ADC_CHANNEL_5       // GPIO6 对应 ADC1_CH5
@@ -31,7 +30,7 @@
 /* ======================rel definition ============================*/
 
 /* =========================API declare=============================*/
-void mq2_drv_init(void);
+void mq2_drv_init(void *arg);
 float mq2_getConcentration(void);
 uint16_t mq2_getPercentage(void);
 

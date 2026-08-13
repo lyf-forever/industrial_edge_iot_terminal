@@ -66,23 +66,23 @@ typedef enum
 #include <stdio.h>
 #include <string.h> 
 
-/*ºê¶¨Òå*/
+/*ï¿½ê¶¨ï¿½ï¿½*/
 #define AT_ADDR(__ADDR)         __attribute__ ((section(".ARM.__at_" #__ADDR)))
 
 #define SET_AREA(__AREA)        __attribute__((section(""#__AREA)))
 
 #define SET_ADDR(__ADDR)        AT_ADDR(__ADDR)
 
-/*±äÁ¿/´úÂë´æ´¢Î»ÖÃ*/
-#define SET_RAM_CODE            __attribute__ ((aligned(64)))   SET_AREA(RAM_CODE)              //´æ´¢ÖÁSRAM
-#define SET_FLASH_AREA          __attribute__ ((aligned(64)))   SET_AREA(FLASH_AREA)              //´æ´¢ÖÁSRAM
-#define SET_SDRAM               __attribute__ ((aligned(64)))   SET_AREA(SDRAM)               //´æ´¢ÖÁSRAM
-#define SET_DMA_AREA_RAM        __attribute__ ((aligned(64)))    SET_AREA(DMA_AREA_RAM)    //DMAÄÚ²¿RAM¿ìËÙÇø
-#define SET_DMA_AREA_SDRAM      __attribute__ ((aligned(64)))    SET_AREA(DMA_AREA_SDRAM)  //DMA SDRAMµÍËÙÇø
-#define SET_DTC                 __attribute__ ((aligned(64)))    SET_AREA(DTC_RAM)              //´æ´¢µ½DTCÇø
-#define SET_AXI                 __attribute__ ((aligned(64)))    SET_AREA(AXI_RAM)              //´æ´¢µ½AXIÇø
+/*ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½æ´¢Î»ï¿½ï¿½*/
+#define SET_RAM_CODE            __attribute__ ((aligned(64)))   SET_AREA(RAM_CODE)              //ï¿½æ´¢ï¿½ï¿½SRAM
+#define SET_FLASH_AREA          __attribute__ ((aligned(64)))   SET_AREA(FLASH_AREA)              //ï¿½æ´¢ï¿½ï¿½SRAM
+#define SET_SDRAM               __attribute__ ((aligned(64)))   SET_AREA(SDRAM)               //ï¿½æ´¢ï¿½ï¿½SRAM
+#define SET_DMA_AREA_RAM        __attribute__ ((aligned(64)))    SET_AREA(DMA_AREA_RAM)    //DMAï¿½Ú²ï¿½RAMï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+#define SET_DMA_AREA_SDRAM      __attribute__ ((aligned(64)))    SET_AREA(DMA_AREA_SDRAM)  //DMA SDRAMï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+#define SET_DTC                 __attribute__ ((aligned(64)))    SET_AREA(DTC_RAM)              //ï¿½æ´¢ï¿½ï¿½DTCï¿½ï¿½
+#define SET_AXI                 __attribute__ ((aligned(64)))    SET_AREA(AXI_RAM)              //ï¿½æ´¢ï¿½ï¿½AXIï¿½ï¿½
 
-#define SET_VECTOR_TABLE        __attribute__ ((aligned(0x400)))  SET_AREA(VECTOR_TABLE)  //DMA SDRAMµÍËÙÇø
+#define SET_VECTOR_TABLE        __attribute__ ((aligned(0x400)))  SET_AREA(VECTOR_TABLE)  //DMA SDRAMï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 void Delay_init(uint16_t sysclk);
 Drv_Err delay_init(void);
@@ -101,5 +101,9 @@ void mpu_config(uint32_t region_base_address,uint32_t region_size,uint32_t acces
                                     uint32_t instruction_exec,uint32_t tex_type);
 void driver_system_config(void);
 SET_FLASH_AREA void systick_cfg(void);
+
+/* å¤±æ•ˆæŒ‡å®šåœ°å€èŒƒå›´çš„ D-Cache è¡Œï¼ˆDMA å†™å…¥å†…å­˜åã€CPU è¯»å–å‰å¿…é¡»è°ƒç”¨ï¼Œ
+ * å¦åˆ™å‘½ä¸­é™ˆæ—§ç¼“å­˜è¡Œè¯»åˆ°æ—§æ•°æ®ï¼‰ã€‚addr æ— éœ€ 32 å­—èŠ‚å¯¹é½ã€‚ */
+void dcache_invalidate_region(uint32_t addr, uint32_t len);
 
 #endif /*#ifndef __PUBLIC_H_*/

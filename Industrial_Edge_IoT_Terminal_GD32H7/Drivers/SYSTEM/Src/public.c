@@ -1,7 +1,7 @@
 #include "public.h"
  
 
-//static uint32_t g_fac_us = 0;      /* usÑÓÊ±±¶³ËÊý */
+//static uint32_t g_fac_us = 0;      /* usï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 
 typdef_tick_handle driver_tick_handle[]=
 {
@@ -52,9 +52,9 @@ SET_FLASH_AREA void cache_disable(void)
 }
 
 /*!
-* ËµÃ÷     systic³õÊ¼»¯£¨Ä¬ÈÏ1ms£©
-* ÊäÈë[1]  ÎÞ
-* ·µ»ØÖµ   ÎÞ
+* Ëµï¿½ï¿½     systicï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½1msï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½[1]  ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ   ï¿½ï¿½
 */
 SET_FLASH_AREA void systick_cfg(void)
 {          
@@ -69,9 +69,9 @@ SET_FLASH_AREA void systick_cfg(void)
 }
 
 /*!
-* ËµÃ÷     delay³õÊ¼»¯
-* ÊäÈë[1]  ÎÞ
-* ·µ»ØÖµ   ÎÞ
+* Ëµï¿½ï¿½     delayï¿½ï¿½Ê¼ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½[1]  ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ   ï¿½ï¿½
 */
 SET_FLASH_AREA Drv_Err delay_init(void)
 {
@@ -99,29 +99,29 @@ SET_FLASH_AREA Drv_Err delay_init(void)
 
 // void Delay_init(uint16_t sysclk)
 // {
-// #if SYS_SUPPORT_OS                                      /* Èç¹ûÐèÒªÖ§³ÖOS. */
-//     uint32_t reload;                                    /* ¶¨Òåreload±äÁ¿£¬ÓÃÓÚ¼ÆËãÖØ×°ÔØÖµ */
+// #if SYS_SUPPORT_OS                                      /* ï¿½ï¿½ï¿½ï¿½ï¿½ÒªÖ§ï¿½ï¿½OS. */
+//     uint32_t reload;                                    /* ï¿½ï¿½ï¿½ï¿½reloadï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½Öµ */
 // #endif
-//     SysTick->CTRL |= (1 << 2);                          /* SYSTICKÊ¹ÓÃÏµÍ³Ê±ÖÓÔ´,ÆµÂÊÎªHCLK */
-//     g_fac_us = sysclk ;                                 /* ²»ÂÛÊÇ·ñÊ¹ÓÃOS,g_fac_us¶¼ÐèÒªÊ¹ÓÃ,×÷Îª1usµÄ»ù´¡Ê±»ù */
-//     SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;           /* ¿ªÆôSYSTICK */
-//     SysTick->LOAD = 0XFFFFFF;                           /* ×¢ÒâSYSTICK¼ÆÊýÆ÷24Î»£¬ËùÒÔÕâÀïÉèÖÃ×î´óÖØ×°ÔØÖµ */
-// #if SYS_SUPPORT_OS                                      /* Èç¹ûÐèÒªÖ§³ÖOS. */
-//     reload = sysclk;                                    /* Ã¿ÃëÖÓµÄ¼ÆÊý´ÎÊý µ¥Î»ÎªM */
-//     reload *= 1000000 / delay_ostickspersec;            /* ¸ù¾Ýdelay_ostickspersecÉè¶¨Òç³öÊ±¼ä
-//                                                          * reloadÎª24Î»¼Ä´æÆ÷,×î´óÖµ:16777216
+//     SysTick->CTRL |= (1 << 2);                          /* SYSTICKÊ¹ï¿½ï¿½ÏµÍ³Ê±ï¿½ï¿½Ô´,Æµï¿½ï¿½ÎªHCLK */
+//     g_fac_us = sysclk ;                                 /* ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Ê¹ï¿½ï¿½OS,g_fac_usï¿½ï¿½ï¿½ï¿½ÒªÊ¹ï¿½ï¿½,ï¿½ï¿½Îª1usï¿½Ä»ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ */
+//     SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;           /* ï¿½ï¿½ï¿½ï¿½SYSTICK */
+//     SysTick->LOAD = 0XFFFFFF;                           /* ×¢ï¿½ï¿½SYSTICKï¿½ï¿½ï¿½ï¿½ï¿½ï¿½24Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½Öµ */
+// #if SYS_SUPPORT_OS                                      /* ï¿½ï¿½ï¿½ï¿½ï¿½ÒªÖ§ï¿½ï¿½OS. */
+//     reload = sysclk;                                    /* Ã¿ï¿½ï¿½ï¿½ÓµÄ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Î»ÎªM */
+//     reload *= 1000000 / delay_ostickspersec;            /* ï¿½ï¿½ï¿½ï¿½delay_ostickspersecï¿½è¶¨ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
+//                                                          * reloadÎª24Î»ï¿½Ä´ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½Öµ:16777216
 //                                                          */
-//     g_fac_ms = 1000 / delay_ostickspersec;              /* ´ú±íOS¿ÉÒÔÑÓÊ±µÄ×îÉÙµ¥Î» */
-//     SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;          /* ¿ªÆôSYSTICKÖÐ¶Ï */
-//     SysTick->LOAD = reload;                             /* Ã¿1/delay_ostickspersecÃëÖÐ¶ÏÒ»´Î */
+//     g_fac_ms = 1000 / delay_ostickspersec;              /* ï¿½ï¿½ï¿½ï¿½OSï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Ùµï¿½Î» */
+//     SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;          /* ï¿½ï¿½ï¿½ï¿½SYSTICKï¿½Ð¶ï¿½ */
+//     SysTick->LOAD = reload;                             /* Ã¿1/delay_ostickspersecï¿½ï¿½ï¿½Ð¶ï¿½Ò»ï¿½ï¿½ */
   
 // #endif
 // }
 
 /*!
-* ËµÃ÷     driverÏà¹Ø¹«¹²Çý¶¯³õÊ¼»¯
-* ÊäÈë[1]  ÎÞ
-* ·µ»ØÖµ   ÎÞ
+* Ëµï¿½ï¿½     driverï¿½ï¿½Ø¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½[1]  ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ   ï¿½ï¿½
 */
 // SET_FLASH_AREA void driver_init(void)
 // {         
@@ -149,27 +149,27 @@ SET_FLASH_AREA Drv_Err delay_init(void)
     
 //     #if (LCD_DEBUG == 1) 
 //         #ifdef TFT_RGB_LCD
-//             bsp_rgb_lcd_init();                 /* ³õÊ¼»¯LCD */
+//             bsp_rgb_lcd_init();                 /* ï¿½ï¿½Ê¼ï¿½ï¿½LCD */
 //             bsp_rgb_lcd_clear(WHITE);
-//             //ÏÔÊ¾logÍ¼Æ¬
+//             //ï¿½ï¿½Ê¾logÍ¼Æ¬
 //             bsp_rgb_lcd_show_log();    
-//             //ÉèÖÃ´òÓ¡´°¿Ú
+//             //ï¿½ï¿½ï¿½Ã´ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½
 //             bsp_rgb_lcd_printf_init(10,109,bsp_rgb_lcd_parameter.width-1,bsp_rgb_lcd_parameter.height-1,FONT_ASCII_24_12,WHITE,BLUE); 
 //         #else
-//             bsp_8080_lcd_init();                 /* ³õÊ¼»¯LCD */
+//             bsp_8080_lcd_init();                 /* ï¿½ï¿½Ê¼ï¿½ï¿½LCD */
 //             bsp_8080_lcd_clear(WHITE);
-//             //ÏÔÊ¾logÍ¼Æ¬
+//             //ï¿½ï¿½Ê¾logÍ¼Æ¬
 //             bsp_8080_lcd_show_log();    
-//             //ÉèÖÃ´òÓ¡´°¿Ú
+//             //ï¿½ï¿½ï¿½Ã´ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½
 //             bsp_8080_lcd_printf_init(10,109,bsp_8080_lcd_parameter.width-1,bsp_8080_lcd_parameter.height-1,FONT_ASCII_16_8,WHITE,BLUE); 
 //         #endif        
 //     #endif    
 // }
 
 /*!
-* ËµÃ÷     1usÑÓÊ±
-* ÊäÈë[1]  count£ºusµ¥Î»
-* ·µ»ØÖµ   ÎÞ
+* Ëµï¿½ï¿½     1usï¿½ï¿½Ê±
+* ï¿½ï¿½ï¿½ï¿½[1]  countï¿½ï¿½usï¿½ï¿½Î»
+* ï¿½ï¿½ï¿½ï¿½Öµ   ï¿½ï¿½
 */
 SET_RAM_CODE void delay_us(uint32_t count)
 {
@@ -198,9 +198,9 @@ SET_RAM_CODE void delay_us(uint32_t count)
 }
 
 /*!
-* ËµÃ÷     »úÆ÷ÖÜÆÚÑÓÊ±
-* ÊäÈë[1]  count£º»úÆ÷ÖÜÆÚ¸öÊý
-* ·µ»ØÖµ   ÎÞ
+* Ëµï¿½ï¿½     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±
+* ï¿½ï¿½ï¿½ï¿½[1]  countï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¸ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ   ï¿½ï¿½
 */
 SET_RAM_CODE void delay_sysclk(uint32_t count)
 {
@@ -228,22 +228,23 @@ SET_RAM_CODE void delay_sysclk(uint32_t count)
 }
 
 /*!
-* ËµÃ÷     1msÑÓÊ±
-* ÊäÈë[1]  count£ºmaµ¥Î»
-* ·µ»ØÖµ   ÎÞ
+* Ëµï¿½ï¿½     1msï¿½ï¿½Ê±
+* ï¿½ï¿½ï¿½ï¿½[1]  countï¿½ï¿½maï¿½ï¿½Î»
+* ï¿½ï¿½ï¿½ï¿½Öµ   ï¿½ï¿½
 */
 SET_RAM_CODE void delay_ms(uint32_t count)
 {  
-    count=count*10;
-    do{
+    uint64_t loops=(uint64_t)count*10U;		/* 64 ä½ç´¯åŠ ï¼Œé¿å… count*10 æº¢å‡ºï¼›count=0 æ—¶ä¸å»¶æ—¶ */
+    while(loops--)
+    {
         delay_us(100);
-    }while(count--);
+    }
 }
 
 /*!
-* ËµÃ÷     1ms tickµÝÔöº¯Êý£¬ÔÚsysticÖÐ¶Ïµ÷ÓÃ
-* ÊäÈë[1]  ÎÞ
-* ·µ»ØÖµ   ÎÞ
+* Ëµï¿½ï¿½     1ms tickï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½systicï¿½Ð¶Ïµï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½[1]  ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Öµ   ï¿½ï¿½
 */
 SET_RAM_CODE void driver_tic_inc(void)
 {
@@ -274,7 +275,7 @@ Drv_Err memory_compare(uint8_t* src, uint8_t* dst, uint16_t length)
     return DRV_SUCCESS;
 }
 
-//Ê¹ÓÃ´Ëº¯ÊýÅäÖÃ²»ÐèÒªÔÙ¹ØÐÄMPU_REGION_NUMBERx£¬¿É×Ô¶¯ÅÅÐò
+//Ê¹ï¿½Ã´Ëºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½Òªï¿½Ù¹ï¿½ï¿½ï¿½MPU_REGION_NUMBERxï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½
 /*!
     \param[in]  mpu_init_struct: MPU initialization structure
                   region_base_address: region base address
@@ -327,7 +328,7 @@ SET_FLASH_AREA void mpu_config(uint32_t region_base_address,uint32_t region_size
 }
 
 
-//Ä¬ÈÏMPUÊôÐÔ
+//Ä¬ï¿½ï¿½MPUï¿½ï¿½ï¿½ï¿½
 // SET_FLASH_AREA static void default_mpu_config(void)
 // {
 //     mpu_region_init_struct mpu_init_struct;
@@ -336,7 +337,7 @@ SET_FLASH_AREA void mpu_config(uint32_t region_base_address,uint32_t region_size
 //     /* disable the MPU */
 //     ARM_MPU_SetRegion(0U, 0U);
     
-//     /*Ä¬ÈÏÆÁ±ÎÍâ²¿´æ´¢ÇøÓò*/
+//     /*Ä¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â²¿ï¿½æ´¢ï¿½ï¿½ï¿½ï¿½*/
 //     /* configure the MPU attributes for all */
 //     mpu_init_struct.region_base_address = 0;
 //     mpu_init_struct.region_size         = MPU_REGION_SIZE_4GB;
@@ -351,7 +352,7 @@ SET_FLASH_AREA void mpu_config(uint32_t region_base_address,uint32_t region_size
 //     mpu_region_config(&mpu_init_struct);
 //     mpu_region_enable();  
     
-//     /*SRAM0 1¹Ø±ÕcacheÔ¤Áô¸øÒÔÌ«Íø·ÃÎÊ*/    
+//     /*SRAM0 1ï¿½Ø±ï¿½cacheÔ¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/    
 //     /* configure the MPU attributes for DMA_RAM */
 //     mpu_init_struct.region_base_address = 0x30000000;
 //     mpu_init_struct.region_size         = MPU_REGION_SIZE_32KB;
@@ -366,7 +367,7 @@ SET_FLASH_AREA void mpu_config(uint32_t region_base_address,uint32_t region_size
 //     mpu_region_config(&mpu_init_struct);
 //     mpu_region_enable();   
 
-//     /*AXI SRAMÔ¤Áô64K¹Ø±Õcache¸øÓ²¼þdma·ÃÎÊ£¬·ÖÉ¢¼ÓÔØºêÊ¹ÓÃSET_DMA_AREA_RAM*/  
+//     /*AXI SRAMÔ¤ï¿½ï¿½64Kï¿½Ø±ï¿½cacheï¿½ï¿½Ó²ï¿½ï¿½dmaï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½É¢ï¿½ï¿½ï¿½Øºï¿½Ê¹ï¿½ï¿½SET_DMA_AREA_RAM*/  
 //     /* configure the MPU attributes for DMA AXI_SRAM */
 //     mpu_init_struct.region_base_address = 0x24070000;
 //     mpu_init_struct.region_size         = MPU_REGION_SIZE_64KB;
@@ -381,7 +382,7 @@ SET_FLASH_AREA void mpu_config(uint32_t region_base_address,uint32_t region_size
 //     mpu_region_config(&mpu_init_struct);
 //     mpu_region_enable();
 
-//     /*SDRAMÄ¬ÈÏÅäÖÃ¿ªcache£¬ÒÔÖ§³Ö·Ç¶ÔÆë·ÃÎÊ£¬·ÖÉ¢¼ÓÔØºêÊ¹ÓÃSET_SDRAM*/  
+//     /*SDRAMÄ¬ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½cacheï¿½ï¿½ï¿½ï¿½Ö§ï¿½Ö·Ç¶ï¿½ï¿½ï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½É¢ï¿½ï¿½ï¿½Øºï¿½Ê¹ï¿½ï¿½SET_SDRAM*/  
 //     /* configure the MPU attributes for SDRAM */
 //     mpu_init_struct.region_base_address = 0xC0000000;
 //     mpu_init_struct.region_size         = MPU_REGION_SIZE_32MB;
@@ -396,7 +397,7 @@ SET_FLASH_AREA void mpu_config(uint32_t region_base_address,uint32_t region_size
 //     mpu_region_config(&mpu_init_struct);
 //     mpu_region_enable();  
     
-//     /*SDRAM±£Áô2MB¹Ø±Õcache¸øÓ²¼þDMA·ÃÎÊ£¬±ÈÈçDCIºÍTLI£¬·ÖÉ¢¼ÓÔØºêÊ¹ÓÃSET_DMA_AREA_SDRAM*/  
+//     /*SDRAMï¿½ï¿½ï¿½ï¿½2MBï¿½Ø±ï¿½cacheï¿½ï¿½Ó²ï¿½ï¿½DMAï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½ï¿½ï¿½DCIï¿½ï¿½TLIï¿½ï¿½ï¿½ï¿½É¢ï¿½ï¿½ï¿½Øºï¿½Ê¹ï¿½ï¿½SET_DMA_AREA_SDRAM*/  
 //     mpu_init_struct.region_base_address = 0xC0600000;
 //     mpu_init_struct.region_size         = MPU_REGION_SIZE_2MB;
 //     mpu_init_struct.access_permission   = MPU_AP_FULL_ACCESS;
@@ -410,7 +411,7 @@ SET_FLASH_AREA void mpu_config(uint32_t region_base_address,uint32_t region_size
 //     mpu_region_config(&mpu_init_struct);
 //     mpu_region_enable();  
     
-//     /*Ö´ÐÐ´Ë´¦Ê±ITCÇø´úÂëÒÑ¾­¼ÓÔØÍê±Ï£¬´úÂëÇøÅäÖÃÖ»¶Á·ÀÖ¹ÄÚ´æÆÆ»µ£¬·ÖÉ¢¼ÓÔØºêÊ¹ÓÃSET_RAM_CODE*/      
+//     /*Ö´ï¿½Ð´Ë´ï¿½Ê±ITCï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½Ö¹ï¿½Ú´ï¿½ï¿½Æ»ï¿½ï¿½ï¿½ï¿½ï¿½É¢ï¿½ï¿½ï¿½Øºï¿½Ê¹ï¿½ï¿½SET_RAM_CODE*/      
 //     /* configure the MPU attributes for ITC */
 //     mpu_init_struct.region_base_address = (uint32_t)(0);
 //     mpu_init_struct.region_size         = MPU_REGION_SIZE_512KB;
@@ -425,7 +426,7 @@ SET_FLASH_AREA void mpu_config(uint32_t region_base_address,uint32_t region_size
 //     mpu_region_config(&mpu_init_struct);
 //     mpu_region_enable();    
 
-//     /*ITCÇøÖÐÔÙ½«Õ»ÇøµÄÊôÐÔÅäÖÃ³É¿É¶ÁÐ´¸²¸ÇÉÏÒ»¸öÅäÖÃ*/ 
+//     /*ITCï¿½ï¿½ï¿½ï¿½ï¿½Ù½ï¿½Õ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã³É¿É¶ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/ 
 //     /* configure the MPU attributes for ITC */
 //     mpu_init_struct.region_base_address = (0);
 //     mpu_init_struct.region_size         = MPU_REGION_SIZE_16KB;
@@ -444,8 +445,8 @@ SET_FLASH_AREA void mpu_config(uint32_t region_base_address,uint32_t region_size
 //     ARM_MPU_Enable(MPU_MODE_PRIV_DEFAULT);       
 // }
 
-//#define CHIP_DEF  //Ð¾Æ¬³ö³§×´Ì¬
-//ÔÚ½øÈëmainÖ®Ç°£¬SystemInitÖÐµ÷ÓÃ
+//#define CHIP_DEF  //Ð¾Æ¬ï¿½ï¿½ï¿½ï¿½×´Ì¬
+//ï¿½Ú½ï¿½ï¿½ï¿½mainÖ®Ç°ï¿½ï¿½SystemInitï¿½Ðµï¿½ï¿½ï¿½
 SET_FLASH_AREA static void ob_ram_config(void)
 {
     uint32_t itcram=0,dtcram=0,itcram_ecc,dtcram0_ecc,dtcram1_ecc;
@@ -509,5 +510,26 @@ SET_FLASH_AREA static void ob_ram_config(void)
 SET_FLASH_AREA void driver_system_config(void)    
 {
     ob_ram_config();    
+}
+
+/*!
+* è¯´æ˜Ž     D-Cache è¡Œå¤±æ•ˆï¼ˆDMA å†™å†…å­˜åŽã€CPU è¯»å–å‰è°ƒç”¨ï¼‰
+* å‚æ•°[1]  addr: èµ·å§‹åœ°å€ï¼ˆæ— éœ€ 32 å­—èŠ‚å¯¹é½ï¼‰
+* å‚æ•°[2]  len : å­—èŠ‚é•¿åº¦
+* è¿”å›žå€¼   æ— 
+*/
+void dcache_invalidate_region(uint32_t addr, uint32_t len)
+{
+    uint32_t op_size = len + (addr & 0x1FU);
+    uint32_t op_addr = addr & ~0x1FU;
+
+    __DSB();
+    do {
+        SCB->DCIMVAC = op_addr;
+        op_addr += 32U;
+        op_size -= 32U;
+    } while (op_size > 0U);
+    __DSB();
+    __ISB();
 }
 

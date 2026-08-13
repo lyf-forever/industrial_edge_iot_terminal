@@ -59,6 +59,7 @@ void led_switch(led_target_t target_led, led_status_t led_target_status){
             }else {
                 gpio_bit_reset(LED4_PORT, LED4_PIN);
             }
+            break;
         default:
             break;
     }
