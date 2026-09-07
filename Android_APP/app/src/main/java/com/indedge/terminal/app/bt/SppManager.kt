@@ -27,6 +27,7 @@ interface SppListener {
     fun onSppData(bytes: ByteArray)
 }
 
+@SuppressLint("MissingPermission")
 object SppManager {
 
     private val mainHandler = Handler(Looper.getMainLooper())

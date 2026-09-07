@@ -54,6 +54,7 @@ interface BleListener {
     fun onRssi(rssi: Int)
 }
 
+@SuppressLint("MissingPermission")
 object BleManager {
 
     private val mainHandler = Handler(Looper.getMainLooper())

@@ -28,6 +28,7 @@ import java.util.Locale
  * BLE 页：设备扫描（含 RSSI）、RSSI 实时曲线、GATT 连接与透传收发。
  * 契约默认 Nordic UART Service，可在“设置”页修改 UUID。
  */
+@SuppressLint("MissingPermission")
 class BleFragment : Fragment(), BleListener {
 
     private var _binding: FragmentBleBinding? = null

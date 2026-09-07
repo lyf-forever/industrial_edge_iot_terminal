@@ -1,5 +1,6 @@
 package com.indedge.terminal.app.ui
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -35,6 +36,7 @@ import java.util.Locale
  * 透传页：经典蓝牙 SPP（BT24/HC05）+ LAN TCP 双通道切换，
  * 共用一套收发面板（HEX/ASCII 可切换）。
  */
+@SuppressLint("MissingPermission")
 class PassThroughFragment : Fragment(), SppListener, TcpListener {
 
     private var _binding: FragmentPassthroughBinding? = null
