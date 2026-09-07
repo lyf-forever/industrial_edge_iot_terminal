@@ -44,6 +44,8 @@ object Notifier {
         return true
     }
 
+    /** 推送告警通知；调用前已由 canNotify 做权限判定 */
+    @android.annotation.SuppressLint("MissingPermission")
     fun notifyAlarm(context: Context, alarmId: Int, level: Int, value: Int) {
         if (!canNotify(context)) return
         val intent = Intent(context, MainActivity::class.java).apply {
