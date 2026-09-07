@@ -1,6 +1,7 @@
 package com.indedge.terminal.app.ui.adapters
 
 import android.annotation.SuppressLint
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.view.LayoutInflater
@@ -13,6 +14,7 @@ import com.indedge.terminal.app.R
 /**
  * 经典蓝牙设备列表适配器（名称 + 地址，标注配对/连接状态）。
  */
+@SuppressLint("MissingPermission")
 @SuppressLint("MissingPermission")
 class BtDeviceAdapter(context: Context) :
     ArrayAdapter<BluetoothDevice>(context, R.layout.item_device, mutableListOf()) {

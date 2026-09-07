@@ -1,5 +1,6 @@
 package com.indedge.terminal.app.ui
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
@@ -28,6 +29,7 @@ import java.util.Locale
  * BLE 页：设备扫描（含 RSSI）、RSSI 实时曲线、GATT 连接与透传收发。
  * 契约默认 Nordic UART Service，可在“设置”页修改 UUID。
  */
+@SuppressLint("MissingPermission")
 @SuppressLint("MissingPermission")
 class BleFragment : Fragment(), BleListener {
 
