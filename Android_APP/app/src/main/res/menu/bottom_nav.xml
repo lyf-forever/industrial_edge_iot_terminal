@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_status"
+        android:icon="@drawable/ic_monitor"
+        android:title="@string/nav_status" />
+    <item
+        android:id="@+id/nav_ble"
+        android:icon="@drawable/ic_bluetooth"
+        android:title="@string/nav_ble" />
+    <item
+        android:id="@+id/nav_passthrough"
+        android:icon="@drawable/ic_passthrough"
+        android:title="@string/nav_passthrough" />
+    <item
+        android:id="@+id/nav_control"
+        android:icon="@drawable/ic_tune"
+        android:title="@string/nav_control" />
+    <item
+        android:id="@+id/nav_settings"
+        android:icon="@drawable/ic_settings"
+        android:title="@string/nav_settings" />
+</menu>

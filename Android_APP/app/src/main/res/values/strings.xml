@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">边缘物联终端</string>
+
+    <!-- 导航 -->
+    <string name="nav_status">监控</string>
+    <string name="nav_ble">BLE</string>
+    <string name="nav_passthrough">透传</string>
+    <string name="nav_control">控制</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- 通用 -->
+    <string name="conn_state">连接状态</string>
+    <string name="not_connected">未连接</string>
+    <string name="connected">已连接</string>
+    <string name="connected_fmt">已连接：%1$s</string>
+    <string name="disconnected">已断开</string>
+    <string name="connecting">连接中…</string>
+    <string name="error_state">错误</string>
+    <string name="unknown_device">未知设备</string>
+    <string name="send">发送</string>
+    <string name="disconnect">断开连接</string>
+    <string name="connect">连接</string>
+    <string name="clear_rx">清空</string>
+    <string name="tx_hint">发送内容（HEX/ASCII）</string>
+    <string name="passthrough_panel">透传收发面板</string>
+    <string name="save_config">保存配置</string>
+
+    <!-- 监控页 -->
+    <string name="sensor_data">传感器数据</string>
+    <string name="alarm">告警</string>
+    <string name="no_alarm">暂无告警</string>
+    <string name="mqtt_log">MQTT 收发日志</string>
+    <string name="device_online">设备在线</string>
+    <string name="device_offline">设备离线</string>
+    <string name="last_hb_none">暂无心跳 · 运行 --</string>
+    <string name="last_hb_fmt">最后心跳 %1$s · 运行 %2$s</string>
+    <string name="history_title">历史曲线（最近 60 点）</string>
+    <string name="history_query">查询历史</string>
+    <string name="history_export">导出 CSV</string>
+    <string name="history_clear">清空历史</string>
+    <string name="csv_export_empty">暂无历史数据可导出</string>
+    <string name="csv_export_fail">CSV 导出失败</string>
+    <string name="export_title">导出</string>
+    <string name="metric_temp">温度（℃）</string>
+    <string name="metric_humid">湿度（%）</string>
+    <string name="metric_gas">气体（ppm）</string>
+    <string name="metric_co2">CO₂（ppm）</string>
+    <string name="metric_press">气压（hPa）</string>
+    <string name="history_row">%1$s  T%2$s H%3$s G%4$d C%5$d P%6$d</string>
+    <string name="dbg_panel">调试发布（任意主题）</string>
+    <string name="dbg_topic_hint">主题</string>
+    <string name="dbg_payload_hint">载荷（JSON）</string>
+    <string name="publish">发布</string>
+    <string name="dbg_subscribe">订阅</string>
+    <string name="dbg_subscribed">取消订阅</string>
+    <string name="close">关闭</string>
+    <string name="io_count">RX %1$d B · TX %2$d B</string>
+    <string name="io_count_zero">RX 0 B · TX 0 B</string>
+    <string name="notif_channel">告警通知</string>
+    <string name="notif_alarm_title">设备告警 #%1$d</string>
+    <string name="notif_alarm_text">等级 %1$d · 当前值 %2$d</string>
+
+    <!-- 后台保活服务 -->
+    <string name="keep_alive_channel">MQTT 连接保活</string>
+    <string name="keep_alive_title">边缘物联终端 · 后台保活</string>
+    <string name="keep_alive_starting">保活服务运行中…</string>
+    <string name="keep_alive_connected">已连接 · %1$s</string>
+    <string name="keep_alive_disconnected">连接断开 · %1$s</string>
+    <string name="keep_alive_stop">停止保活</string>
+    <string name="keep_alive_switch">后台保活（锁屏保持 MQTT 连接）</string>
+    <string name="keep_alive_hint">开启后以前台服务常驻，断线自动指数退避重连，通知栏实时显示连接状态</string>
+    <string name="reconnect_state">重连中 · %1$s</string>
+
+    <!-- BLE 页 -->
+    <string name="ble_scan_start">开始扫描</string>
+    <string name="ble_scan_stop">停止扫描</string>
+    <string name="ble_enable">启用蓝牙</string>
+    <string name="ble_devices">附近 BLE 设备（点击连接）</string>
+    <string name="ble_scanning">扫描中…</string>
+    <string name="ble_scan_idle">未扫描 · 已发现 %1$d 台</string>
+    <string name="rssi_chart">RSSI 实时曲线</string>
+    <string name="gatt_ready">透传通道就绪</string>
+    <string name="ble_item_name">%1$s　(%2$d dBm)</string>
+    <string name="ble_config">BLE 契约 UUID（Nordic UART Service）</string>
+    <string name="ble_config_hint">与 ESP32 GATT Server 固件保持一致，默认 NUS 标准 UUID</string>
+    <string name="ble_service_hint">服务 UUID</string>
+    <string name="ble_tx_hint">写特征 UUID（APP→设备）</string>
+    <string name="ble_rx_hint">通知特征 UUID（设备→APP）</string>
+
+    <!-- 透传页 -->
+    <string name="passthrough_channel">透传通道</string>
+    <string name="channel_spp">经典蓝牙 SPP</string>
+    <string name="channel_tcp">LAN TCP</string>
+    <string name="discover_devices">扫描设备</string>
+    <string name="discover_stop">停止扫描</string>
+    <string name="discovering">扫描中…</string>
+    <string name="spp_idle">空闲</string>
+    <string name="spp_hint">SPP 对应 GD32 端 BT24/HC05（9600bps 透传）与 ESP32 内置经典蓝牙；TCP 对应 ESP32 Wi-Fi 透传服务（规划中）</string>
+    <string name="bt_item_addr">%1$s · %2$s</string>
+    <string name="bonded">已配对</string>
+    <string name="unbonded">未配对</string>
+    <string name="tcp_config">LAN TCP 透传目标</string>
+    <string name="tcp_host_hint">目标 IP / 域名</string>
+    <string name="tcp_port_hint">端口</string>
+
+    <!-- 控制页 -->
+    <string name="led_control">LED 控制</string>
+    <string name="led1_on">LED1 开</string>
+    <string name="led1_off">LED1 关</string>
+    <string name="led2_on">LED2 开</string>
+    <string name="led2_off">LED2 关</string>
+    <string name="display_control">LCD 显示控制</string>
+    <string name="display_hint">下发后经跨核事件总线刷新 GD32 LCD（显示渲染依赖 GD32 端 handler）</string>
+    <string name="display_text_hint">显示内容</string>
+    <string name="send_display">下发显示</string>
+    <string name="query_status">查询设备状态</string>
+    <string name="remote_reboot">远程重启设备</string>
+    <string name="cmd_history">命令历史</string>
+
+    <!-- OTA -->
+    <string name="ota_title">OTA 固件升级</string>
+    <string name="ota_hint">下发 OTA 命令后，设备将从 HTTPS 地址下载固件，校验通过后切换 A/B 分区并重启，失败自动回滚。</string>
+    <string name="fw_url_hint">固件下载 URL（HTTPS）</string>
+    <string name="start_ota">开始 OTA</string>
+
+    <!-- 设置页 -->
+    <string name="mqtt_config">MQTT 连接配置</string>
+    <string name="broker_uri_hint">Broker 地址（tcp://或 ssl://）</string>
+    <string name="client_id_hint">Client ID</string>
+    <string name="cfg_backup_title">配置备份</string>
+    <string name="cfg_backup_hint">将全部连接配置（MQTT/BLE/TCP/保活）导出为 JSON 文件，或从备份恢复</string>
+    <string name="cfg_export">导出配置</string>
+    <string name="cfg_import">导入配置</string>
+    <string name="cfg_import_ok">配置导入成功</string>
+    <string name="cfg_import_ok_connected">配置导入成功；当前连接仍使用旧参数，请断开后重新连接使设置生效</string>
+    <string name="cfg_import_fail">配置导入失败（格式错误）</string>
+    <string name="cfg_read_fail">读取文件失败</string>
+    <string name="cfg_saved">配置已保存</string>
+    <string name="cfg_saved_connected">配置已保存（连接中，重新连接后生效）</string>
+    <string name="link_busy">连接正在建立中，请稍候</string>
+    <string name="bt_item_connected">%1$s · 已连接</string>
+</resources>
