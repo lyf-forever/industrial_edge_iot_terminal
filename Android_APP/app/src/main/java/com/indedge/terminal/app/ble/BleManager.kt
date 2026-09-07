@@ -55,7 +55,6 @@ interface BleListener {
 }
 
 @SuppressLint("MissingPermission")
-@SuppressLint("MissingPermission")
 object BleManager {
 
     private val mainHandler = Handler(Looper.getMainLooper())

@@ -30,7 +30,6 @@ import java.util.Locale
  * 契约默认 Nordic UART Service，可在“设置”页修改 UUID。
  */
 @SuppressLint("MissingPermission")
-@SuppressLint("MissingPermission")
 class BleFragment : Fragment(), BleListener {
 
     private var _binding: FragmentBleBinding? = null

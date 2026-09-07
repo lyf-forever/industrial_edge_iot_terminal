@@ -28,7 +28,6 @@ interface SppListener {
 }
 
 @SuppressLint("MissingPermission")
-@SuppressLint("MissingPermission")
 object SppManager {
 
     private val mainHandler = Handler(Looper.getMainLooper())
