@@ -255,15 +255,14 @@ object MqttManager {
 
     /**
      * 发布到任意主题（QoS1）。
-     * MqttClient.publish 为同步调用：QoS>0 时阻塞至 broker 确认或超时，
-     * 成功即视为送达，结果经 onPublishResult 通知（主线程）。
+     * Paho MqttClient（同步客户端）的 publish 会阻塞至 broker 确认（QoS>0）或超时，
+     * 无异常即视为送达，结果经 onPublishResult 通知（主线程）。
      */
     fun publishRaw(topic: String, payload: String, qos: Int = 1): Boolean {
         return try {
             val c = client ?: return false
             val msg = MqttMessage(payload.toByteArray(Charsets.UTF_8)).apply { this.qos = qos }
-            val token = c.publish(topic, msg)
-            token.waitForCompletion(5000)
+            c.publish(topic, msg)
             mainHandler.post { listeners.forEach { it.onPublishResult(topic, true) } }
             true
         } catch (e: MqttException) {
