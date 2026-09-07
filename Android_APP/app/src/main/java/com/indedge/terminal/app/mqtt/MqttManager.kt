@@ -5,9 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Handler
 import android.os.Looper
-import org.eclipse.paho.client.mqttv3.IMqttActionListener
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
-import org.eclipse.paho.client.mqttv3.IMqttToken
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
@@ -255,22 +253,21 @@ object MqttManager {
         }
     }
 
-    /** 发布到任意主题，QoS1 确认结果经 onPublishResult 回调 */
+    /**
+     * 发布到任意主题（QoS1）。
+     * MqttClient.publish 为同步调用：QoS>0 时阻塞至 broker 确认或超时，
+     * 成功即视为送达，结果经 onPublishResult 通知（主线程）。
+     */
     fun publishRaw(topic: String, payload: String, qos: Int = 1): Boolean {
         return try {
             val c = client ?: return false
             val msg = MqttMessage(payload.toByteArray(Charsets.UTF_8)).apply { this.qos = qos }
-            c.publish(topic, msg, null, object : IMqttActionListener {
-                override fun onSuccess(asyncToken: IMqttToken?) {
-                    mainHandler.post { listeners.forEach { it.onPublishResult(topic, true) } }
-                }
-
-                override fun onFailure(asyncToken: IMqttToken?, exception: Throwable?) {
-                    mainHandler.post { listeners.forEach { it.onPublishResult(topic, false) } }
-                }
-            })
+            val token = c.publish(topic, msg)
+            token.waitForCompletion(5000)
+            mainHandler.post { listeners.forEach { it.onPublishResult(topic, true) } }
             true
         } catch (e: MqttException) {
+            mainHandler.post { listeners.forEach { it.onPublishResult(topic, false) } }
             notifyConnection(false, "发布失败: ${e.message}")
             false
         }

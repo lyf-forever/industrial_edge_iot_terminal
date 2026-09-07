@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.indedge.terminal.app.R
 import com.indedge.terminal.app.ble.BleProfile
 import com.indedge.terminal.app.databinding.FragmentSettingsBinding
 import com.indedge.terminal.app.mqtt.MqttManager

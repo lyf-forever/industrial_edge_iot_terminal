@@ -34,10 +34,15 @@ object Notifier {
     }
 
     /** 判断是否可推送（通知权限 + 告警等级门槛由调用方判断） */
-    private fun canNotify(context: Context): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-            == PackageManager.PERMISSION_GRANTED
+    private fun canNotify(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                context, Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            return granted
+        }
+        return true
+    }
 
     fun notifyAlarm(context: Context, alarmId: Int, level: Int, value: Int) {
         if (!canNotify(context)) return

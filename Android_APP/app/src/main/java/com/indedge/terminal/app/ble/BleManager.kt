@@ -301,14 +301,20 @@ object BleManager {
     }
 
     // 契约 UUID 读取（支持设置页自定义）
-    private fun serviceUuidOf(): String =
-        Prefs.str(appCtx ?: return BleProfile.UUID_SERVICE, Prefs.KEY_BLE_SERVICE_UUID, BleProfile.UUID_SERVICE)
+    private fun serviceUuidOf(): String {
+        val ctx = appCtx ?: return BleProfile.UUID_SERVICE
+        return Prefs.str(ctx, Prefs.KEY_BLE_SERVICE_UUID, BleProfile.UUID_SERVICE)
+    }
 
-    private fun txUuidOf(): String =
-        Prefs.str(appCtx ?: return BleProfile.UUID_TX_WRITE, Prefs.KEY_BLE_TX_UUID, BleProfile.UUID_TX_WRITE)
+    private fun txUuidOf(): String {
+        val ctx = appCtx ?: return BleProfile.UUID_TX_WRITE
+        return Prefs.str(ctx, Prefs.KEY_BLE_TX_UUID, BleProfile.UUID_TX_WRITE)
+    }
 
-    private fun rxUuidOf(): String =
-        Prefs.str(appCtx ?: return BleProfile.UUID_RX_NOTIFY, Prefs.KEY_BLE_RX_UUID, BleProfile.UUID_RX_NOTIFY)
+    private fun rxUuidOf(): String {
+        val ctx = appCtx ?: return BleProfile.UUID_RX_NOTIFY
+        return Prefs.str(ctx, Prefs.KEY_BLE_RX_UUID, BleProfile.UUID_RX_NOTIFY)
+    }
 
     private val CCCD_UUID: UUID =
         UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
