@@ -29,7 +29,8 @@ class CsvExportTest {
         val rec = SensorRecord(12345L, 22f, 60f, 100, 450, 1013)
         val csv = CsvExport.build(listOf(rec))
         val body = csv.trim().split("\n")[1]
-        assertEquals(7, body.split(",").size)
+        // 时间 + 5 个指标 = 6 列
+        assertEquals(6, body.split(",").size)
         assertTrue(body.contains("100"))
         assertTrue(body.contains("450"))
     }

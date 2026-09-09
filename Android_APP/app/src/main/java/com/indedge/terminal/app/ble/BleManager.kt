@@ -266,11 +266,11 @@ object BleManager {
             ch.value
         }
 
+    @Suppress("DEPRECATION")
     private fun setCharacteristicValue(ch: BluetoothGattCharacteristic, bytes: ByteArray) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ch.setValue(bytes)
         } else {
-            @Suppress("DEPRECATION")
             ch.value = bytes
         }
     }
