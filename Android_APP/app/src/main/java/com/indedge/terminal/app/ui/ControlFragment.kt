@@ -4,12 +4,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.indedge.terminal.app.databinding.FragmentControlBinding
 import com.indedge.terminal.app.mqtt.MqttManager
+import com.indedge.terminal.app.util.Prefs
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -55,6 +57,7 @@ class ControlFragment : Fragment() {
             binding.tvCmdHistory.text = ""
             vm.clearCmds()
         }
+        binding.btnAddTemplate.setOnClickListener { saveTemplate() }
 
         vm.connection.observe(viewLifecycleOwner) { st ->
             binding.tvConnState.text = if (st.connected) "已连接" else "未连接"
@@ -63,6 +66,61 @@ class ControlFragment : Fragment() {
         vm.cmdEvent.observe(viewLifecycleOwner) { refreshCmdHistory() }
 
         refreshCmdHistory()
+        renderTemplates()
+    }
+
+    // ================= 命令模板 =================
+
+    private fun loadTemplates(): List<String> {
+        val raw = Prefs.str(requireContext(), Prefs.KEY_CMD_TEMPLATES, "[]")
+        return runCatching {
+            val arr = org.json.JSONArray(raw)
+            (0 until arr.length()).map { arr.getString(it) }
+        }.getOrDefault(emptyList())
+    }
+
+    private fun saveTemplates(list: List<String>) {
+        val arr = org.json.JSONArray()
+        list.forEach { arr.put(it) }
+        Prefs.setStr(requireContext(), Prefs.KEY_CMD_TEMPLATES, arr.toString())
+        renderTemplates()
+    }
+
+    private fun saveTemplate() {
+        val text = binding.etCmdTemplate.text?.toString()?.trim().orEmpty()
+        if (text.isEmpty()) return
+        val list = loadTemplates().toMutableList()
+        if (text !in list) {
+            if (list.size >= 10) {
+                Toast.makeText(requireContext(), R.string.template_limit, Toast.LENGTH_SHORT).show()
+                return
+            }
+            list.add(text)
+            saveTemplates(list)
+            binding.etCmdTemplate.text?.clear()
+            Toast.makeText(requireContext(), R.string.template_added, Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(requireContext(), R.string.template_exists, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun renderTemplates() {
+        val container = binding.llTemplates
+        container.removeAllViews()
+        for (tpl in loadTemplates()) {
+            val btn = Button(requireContext()).apply {
+                text = tpl
+                textSize = 13f
+                isAllCaps = false
+                setOnClickListener { sendCommand(tpl) }
+                setOnLongClickListener {
+                    saveTemplates(loadTemplates().filterNot { it == tpl })
+                    Toast.makeText(requireContext(), R.string.template_removed, Toast.LENGTH_SHORT).show()
+                    true
+                }
+            }
+            container.addView(btn)
+        }
     }
 
     private fun refreshCmdHistory() {

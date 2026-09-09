@@ -2,11 +2,12 @@ package com.indedge.terminal.app.view
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
+import com.indedge.terminal.app.R
 import kotlin.math.max
 
 /**
@@ -27,7 +28,7 @@ class LineChartView @JvmOverloads constructor(
     private var visibleIndex = 0
 
     private val paintGrid = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#E0E0E0")
+        color = ContextCompat.getColor(context, R.color.chart_grid)
         strokeWidth = 2f
     }
     private val paintLine = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -37,11 +38,11 @@ class LineChartView @JvmOverloads constructor(
         strokeCap = Paint.Cap.ROUND
     }
     private val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#757575")
+        color = ContextCompat.getColor(context, R.color.chart_axis)
         textSize = 24f
     }
     private val paintValue = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#37474F")
+        color = ContextCompat.getColor(context, R.color.chart_axis)
         textSize = 28f
     }
 

@@ -14,6 +14,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import com.indedge.terminal.app.util.Prefs
@@ -178,11 +179,12 @@ object BleManager {
 
     private val gattCallback = object : BluetoothGattCallback() {
 
-        @Deprecated("Deprecated in Java")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 connected = true
                 notifyGatt("CONNECTED", gatt.device.address)
+                // 协商更大 MTU 提升透传吞吐（185 为标准 NUS 常用值）
+                runCatching { gatt.requestMtu(185) }
                 gatt.discoverServices()
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 connected = false
@@ -195,7 +197,6 @@ object BleManager {
             }
         }
 
-        @Deprecated("Deprecated in Java")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 notifyGatt("ERROR", "服务发现失败 status=$status")
@@ -225,16 +226,14 @@ object BleManager {
             enableNotify()
         }
 
-        @Deprecated("Deprecated in Java")
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
-            val v = characteristic.value ?: return
+            val v = characteristicValue(characteristic) ?: return
             mainHandler.post { listeners.forEach { it.onData(v.copyOf()) } }
         }
 
-        @Deprecated("Deprecated in Java")
         override fun onDescriptorWrite(
             gatt: BluetoothGatt,
             descriptor: BluetoothGattDescriptor,
@@ -250,11 +249,29 @@ object BleManager {
             }
         }
 
-        @Deprecated("Deprecated in Java")
         override fun onReadRemoteRssi(gatt: BluetoothGatt, rssi: Int, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 mainHandler.post { listeners.forEach { it.onRssi(rssi) } }
             }
+        }
+    }
+
+    // ============ API 33 兼容：特征值读写（旧接口已弃用） ============
+
+    private fun characteristicValue(ch: BluetoothGattCharacteristic): ByteArray? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ch.getValue()
+        } else {
+            @Suppress("DEPRECATION")
+            ch.value
+        }
+
+    private fun setCharacteristicValue(ch: BluetoothGattCharacteristic, bytes: ByteArray) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ch.setValue(bytes)
+        } else {
+            @Suppress("DEPRECATION")
+            ch.value = bytes
         }
     }
 
@@ -279,7 +296,7 @@ object BleManager {
         return try {
             val ch = txCh ?: return false
             ch.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-            ch.value = bytes
+            setCharacteristicValue(ch, bytes)
             gatt?.writeCharacteristic(ch) ?: false
         } catch (e: Exception) {
             false

@@ -6,5 +6,9 @@
     <color name="red">#C62828</color>
     <color name="orange">#EF6C00</color>
     <color name="divider">#E0E0E0</color>
+    <color name="green_online">#2E7D32</color>
+    <color name="surface_soft">#F5F5F5</color>
+    <color name="chart_grid">#E0E0E0</color>
+    <color name="chart_axis">#757575</color>
     <color name="ic_launcher_background">#0D47A1</color>
 </resources>

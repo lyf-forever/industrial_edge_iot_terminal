@@ -4,8 +4,8 @@ import android.os.Handler
 import android.os.Looper
 import java.io.IOException
 import java.net.InetSocketAddress
+import com.indedge.terminal.app.util.Backoff
 import java.net.Socket
-import kotlin.math.min
 
 /**
  * LAN TCP 透传链路。
@@ -139,10 +139,9 @@ object TcpManager {
     /** 指数退避：2s/4s/8s/16s/30s 封顶 */
     private fun scheduleReconnect() {
         if (userStopped) return
-        val delayMs = min(2_000L shl reconnectAttempts, 30_000L)
         reconnectAttempts++
         mainHandler.removeCallbacks(reconnectRunnable)
-        mainHandler.postDelayed(reconnectRunnable, delayMs)
+        mainHandler.postDelayed(reconnectRunnable, Backoff.nextDelayMs(reconnectAttempts - 1, 2_000L, 30_000L))
     }
 
     private fun attemptReconnect() {

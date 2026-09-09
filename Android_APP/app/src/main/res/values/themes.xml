@@ -6,4 +6,11 @@
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="android:statusBarColor">@color/primary_dark</item>
     </style>
+
+    <!-- 启动画面（Android 12+ SplashScreen API，低版本由 core-splashscreen 兼容） -->
+    <style name="Theme.IndustrialEdge.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.IndustrialEdge</item>
+    </style>
 </resources>

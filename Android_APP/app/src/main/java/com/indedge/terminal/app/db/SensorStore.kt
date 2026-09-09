@@ -20,6 +20,16 @@ data class SensorRecord(
     val press: Int
 )
 
+/** 按小时聚合统计结果 */
+data class HourStat(
+    val bucketMs: Long,
+    val avgTemp: Float,
+    val avgHumid: Float,
+    val maxGas: Int,
+    val avgCo2: Float,
+    val avgPress: Float
+)
+
 class SensorDb(context: Context) : SQLiteOpenHelper(context, "sensor_history.db", null, 1) {
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -76,6 +86,33 @@ class SensorDb(context: Context) : SQLiteOpenHelper(context, "sensor_history.db"
     fun deleteOlderThan(ts: Long) {
         writableDatabase.delete("history", "ts < ?", arrayOf(ts.toString()))
     }
+
+    /** 最近 N 小时的按小时聚合（均值/气体峰值） */
+    fun queryHourlyStats(hours: Int): List<HourStat> {
+        val rows = mutableListOf<HourStat>()
+        val since = System.currentTimeMillis() - hours * 3600_000L
+        readableDatabase.rawQuery(
+            "SELECT (ts / 3600000) * 3600000 AS bucket," +
+                " AVG(temp), AVG(humid), MAX(gas), AVG(co2), AVG(press)" +
+                " FROM history WHERE ts >= ?" +
+                " GROUP BY bucket ORDER BY bucket DESC LIMIT ?",
+            arrayOf(since.toString(), hours.toString())
+        ).use { c ->
+            while (c.moveToNext()) {
+                rows.add(
+                    HourStat(
+                        bucketMs = c.getLong(0),
+                        avgTemp = c.getFloat(1),
+                        avgHumid = c.getFloat(2),
+                        maxGas = c.getInt(3),
+                        avgCo2 = c.getFloat(4),
+                        avgPress = c.getFloat(5)
+                    )
+                )
+            }
+        }
+        return rows
+    }
 }
 
 /** 进程内单例：初始化一次，写入走单线程队列 */
@@ -103,6 +140,9 @@ object SensorStore {
 
     fun queryRecent(limit: Int): List<SensorRecord> =
         helper?.queryRecent(limit) ?: emptyList()
+
+    fun queryHourlyStats(hours: Int): List<HourStat> =
+        helper?.queryHourlyStats(hours) ?: emptyList()
 
     fun clear() {
         val h = helper ?: return

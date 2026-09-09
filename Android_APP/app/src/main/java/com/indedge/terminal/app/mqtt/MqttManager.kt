@@ -12,8 +12,8 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
+import com.indedge.terminal.app.util.Backoff
 import java.util.UUID
-import kotlin.math.min
 
 /**
  * 与固件共享的 MQTT 契约（对照 ESP32 端 Service/Inc/mqtt_client_app.h）：
@@ -191,10 +191,9 @@ object MqttManager {
     /** 指数退避重连：2s/4s/8s/16s/32s/60s 封顶 */
     private fun scheduleReconnect() {
         if (userStopped) return
-        val delayMs = min(2_000L shl reconnectAttempts, 60_000L)
         reconnectAttempts++
         mainHandler.removeCallbacks(reconnectRunnable)
-        mainHandler.postDelayed(reconnectRunnable, delayMs)
+        mainHandler.postDelayed(reconnectRunnable, Backoff.nextDelayMs(reconnectAttempts - 1, 2_000L, 60_000L))
     }
 
     private fun attemptReconnect() {

@@ -169,7 +169,7 @@
             android:layout_width="match_parent"
             android:layout_height="160dp"
             android:layout_marginTop="4dp"
-            android:background="#F5F5F5"
+            android:background="@color/surface_soft"
             android:padding="8dp">
 
             <TextView

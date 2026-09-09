@@ -45,10 +45,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-caches-
 
-      - name: Build debug APK
+      - name: Build debug APK & unit tests
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
+          ./gradlew --no-daemon assembleDebug testDebugUnitTest
 
       - name: Run lint
         run: |

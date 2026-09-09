@@ -20,6 +20,13 @@ object Prefs {
 
     const val KEY_KEEP_ALIVE = "keep_alive"
 
+    const val KEY_ALARM_NOTIFY = "alarm_notify"
+    const val KEY_DND_ENABLED = "dnd_enabled"
+    const val KEY_DND_START = "dnd_start"
+    const val KEY_DND_END = "dnd_end"
+
+    const val KEY_CMD_TEMPLATES = "cmd_templates"
+
     fun str(context: Context, key: String, def: String): String =
         context.getSharedPreferences(NAME, Context.MODE_PRIVATE).getString(key, def) ?: def
 

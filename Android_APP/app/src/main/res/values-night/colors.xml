@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#90CAF9</color>
+    <color name="primary_dark">#1565C0</color>
+    <color name="gray">#AAAAAA</color>
+    <color name="red">#EF5350</color>
+    <color name="orange">#FFB74D</color>
+    <color name="divider">#3A3A3A</color>
+    <color name="green_online">#66BB6A</color>
+    <color name="surface_soft">#1E1E1E</color>
+    <color name="chart_grid">#3A3A3A</color>
+    <color name="chart_axis">#9E9E9E</color>
+    <color name="ic_launcher_background">#0D47A1</color>
+</resources>

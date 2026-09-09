@@ -2,11 +2,12 @@ package com.indedge.terminal.app.view
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
+import com.indedge.terminal.app.R
 import kotlin.math.roundToInt
 
 /**
@@ -24,22 +25,22 @@ class RssiChartView @JvmOverloads constructor(
     private var maxSamples = 100
 
     private val paintGrid = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#E0E0E0")
+        color = ContextCompat.getColor(context, R.color.chart_grid)
         strokeWidth = 2f
     }
     private val paintLine = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#1565C0")
+        color = ContextCompat.getColor(context, R.color.primary)
         strokeWidth = 4f
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
     }
     private val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#757575")
+        color = ContextCompat.getColor(context, R.color.chart_axis)
         textSize = 26f
     }
     private val paintValue = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#1565C0")
+        color = ContextCompat.getColor(context, R.color.chart_axis)
         textSize = 32f
     }
 

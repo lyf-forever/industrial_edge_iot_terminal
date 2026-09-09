@@ -16,7 +16,10 @@ import com.indedge.terminal.app.databinding.FragmentStatusBinding
 import com.indedge.terminal.app.db.SensorStore
 import com.indedge.terminal.app.mqtt.MqttManager
 import com.indedge.terminal.app.mqtt.MqttProtocol
+import com.indedge.terminal.app.util.AlarmPrefs
+import com.indedge.terminal.app.util.Prefs
 import com.indedge.terminal.app.util.ShareUtils
+import com.indedge.terminal.app.util.TimeFmt
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -83,7 +86,14 @@ class StatusFragment : Fragment() {
             vm.clearLogs()
         }
         binding.btnQueryHistory.setOnClickListener { showHistoryDialog() }
+        binding.btnStats.setOnClickListener { showStatsDialog() }
         binding.btnExportCsv.setOnClickListener { exportCsv() }
+        binding.btnClearAlarms.setOnClickListener {
+            vm.clearAlarms()
+            binding.tvAlarm.text = getString(R.string.no_alarm)
+            binding.alarmListContainer.removeAllViews()
+        }
+        binding.btnAlarmSettings.setOnClickListener { showAlarmSettingsDialog() }
         binding.btnClearHistory.setOnClickListener {
             SensorStore.clear()
             vm.clearSeries()
@@ -105,7 +115,7 @@ class StatusFragment : Fragment() {
             binding.tvConnState.text = if (st.connected) "已连接" else "未连接"
             binding.tvConnDetail.text = st.detail
             binding.tvConnState.setTextColor(
-                if (st.connected) 0xFF2E7D32.toInt() else 0xFFC62828.toInt()
+                if (st.connected) ContextCompat.getColor(requireContext(), R.color.green_online) else ContextCompat.getColor(requireContext(), R.color.red)
             )
         }
         vm.online.observe(viewLifecycleOwner) { online ->
@@ -115,7 +125,7 @@ class StatusFragment : Fragment() {
                 getString(R.string.device_offline)
             }
             binding.tvDeviceOnline.setTextColor(
-                if (online) 0xFF2E7D32.toInt() else 0xFFC62828.toInt()
+                if (online) ContextCompat.getColor(requireContext(), R.color.green_online) else ContextCompat.getColor(requireContext(), R.color.red)
             )
         }
         vm.hbLine.observe(viewLifecycleOwner) { line ->
@@ -176,7 +186,72 @@ class StatusFragment : Fragment() {
         super.onDestroyView()
     }
 
-    // ================= 历史查询 / 导出 =================
+    // ================= 历史查询 / 统计 =================
+
+    private fun showStatsDialog() {
+        val rows = SensorStore.queryHourlyStats(24)
+        if (rows.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.stats_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val hourFmt = SimpleDateFormat("dd日 HH:00", Locale.getDefault())
+        val items = rows.map { r ->
+            getString(
+                R.string.stats_row,
+                hourFmt.format(Date(r.bucketMs)),
+                String.format("%.1f", r.avgTemp),
+                String.format("%.1f", r.avgHumid),
+                r.maxGas
+            )
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.stats_title)
+            .setAdapter(
+                ArrayAdapter(
+                    requireContext(),
+                    android.R.layout.simple_list_item_1,
+                    items
+                ), null
+            )
+            .setPositiveButton(R.string.close, null)
+            .show()
+    }
+
+    private fun showAlarmSettingsDialog() {
+        val ctx = requireContext()
+        val view = LayoutInflater.from(ctx)
+            .inflate(R.layout.dialog_alarm_settings, null, false)
+        val swNotify = view.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.swNotifyAlarm)
+        val swDnd = view.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.swDnd)
+        val etStart = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etDndStart)
+        val etEnd = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etDndEnd)
+
+        swNotify.isChecked = AlarmPrefs.notifyEnabled(ctx)
+        swDnd.isChecked = AlarmPrefs.dndEnabled(ctx)
+        etStart.setText(AlarmPrefs.dndStart(ctx))
+        etEnd.setText(AlarmPrefs.dndEnd(ctx))
+
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.alarm_settings)
+            .setView(view)
+            .setPositiveButton(R.string.cfg_saved) { _, _ ->
+                val start = etStart.text?.toString()?.trim().orEmpty()
+                val end = etEnd.text?.toString()?.trim().orEmpty()
+                if (!isHhmm(start) || !isHhmm(end)) {
+                    Toast.makeText(ctx, R.string.dnd_bad_format, Toast.LENGTH_LONG).show()
+                    return@setPositiveButton
+                }
+                Prefs.setStr(ctx, Prefs.KEY_ALARM_NOTIFY, if (swNotify.isChecked) "1" else "0")
+                Prefs.setStr(ctx, Prefs.KEY_DND_ENABLED, if (swDnd.isChecked) "1" else "0")
+                Prefs.setStr(ctx, Prefs.KEY_DND_START, start)
+                Prefs.setStr(ctx, Prefs.KEY_DND_END, end)
+            }
+            .setNegativeButton(R.string.close, null)
+            .show()
+    }
+
+    private fun isHhmm(s: String): Boolean =
+        Regex("^([01]\\d|2[0-3]):[0-5]\\d$").matches(s)
 
     private fun showHistoryDialog() {
         val rows = SensorStore.queryRecent(50)
@@ -218,21 +293,10 @@ class StatusFragment : Fragment() {
                 }
                 return@Thread
             }
-            val rowFmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            val nameFmt = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-            val sb = StringBuilder("时间,温度(℃),湿度(%),气体(ppm),CO2(ppm),气压(hPa)\n")
-            for (r in rows.reversed()) {
-                sb.append(rowFmt.format(Date(r.ts)))
-                    .append(',').append(String.format("%.1f", r.temp))
-                    .append(',').append(String.format("%.1f", r.humid))
-                    .append(',').append(r.gas)
-                    .append(',').append(r.co2)
-                    .append(',').append(r.press)
-                    .append('\n')
-            }
+            val content = CsvExport.build(rows)
             val dir = File(ctx.filesDir, "exports").apply { mkdirs() }
-            val file = File(dir, "sensor_history_${nameFmt.format(Date())}.csv")
-            val ok = runCatching { file.writeText(sb.toString()) }.isSuccess
+            val file = File(dir, "sensor_history_${TimeFmt.fileStamp()}.csv")
+            val ok = runCatching { file.writeText(content) }.isSuccess
             act.runOnUiThread {
                 if (ok) {
                     ShareUtils.shareFile(ctx, this, file, "text/csv")

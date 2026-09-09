@@ -10,7 +10,9 @@ import com.indedge.terminal.app.db.SensorStore
 import com.indedge.terminal.app.mqtt.MqttEventListener
 import com.indedge.terminal.app.mqtt.MqttManager
 import com.indedge.terminal.app.mqtt.MqttProtocol
+import com.indedge.terminal.app.util.AlarmPrefs
 import com.indedge.terminal.app.util.Notifier
+import com.indedge.terminal.app.util.TimeFmt
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -155,8 +157,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mq
             alarmLines.addFirst(line)
             while (alarmLines.size > ALARM_MAX) alarmLines.removeLast()
             alarmEvent.value = AlarmEvent(id, level, value, line)
-            // 高等级告警通知不依赖页面前台状态
-            if (level >= 2) {
+            // 高等级告警通知不依赖页面前台状态；受通知总开关与勿扰时段门控
+            if (level >= 2 && AlarmPrefs.shouldNotify(getApplication())) {
                 Notifier.notifyAlarm(getApplication(), id, level, value)
             }
         } catch (_: Exception) {
@@ -185,7 +187,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mq
         hbLine.value = if (lastHeartbeatAt == 0L) {
             "暂无心跳 · 运行 --"
         } else {
-            "最后心跳 ${timeFmt.format(Date(lastHeartbeatAt))} · 运行 ${formatUptime(lastUptime)}"
+            "最后心跳 ${timeFmt.format(Date(lastHeartbeatAt))} · 运行 ${TimeFmt.formatUptime(lastUptime)}"
         }
     }
 
@@ -213,6 +215,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mq
         logEvent.value = null
     }
 
+    fun clearAlarms() {
+        alarmLines.clear()
+        alarmEvent.value = null
+    }
+
     fun clearCmds() {
         cmdLines.clear()
         cmdEvent.value = null
@@ -220,12 +227,5 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mq
 
     fun clearSeries() {
         for (q in sensorSeries) q.clear()
-    }
-
-    private fun formatUptime(seconds: Long): String {
-        val h = seconds / 3600
-        val m = seconds % 3600 / 60
-        val s = seconds % 60
-        return String.format("%02d:%02d:%02d", h, m, s)
     }
 }
