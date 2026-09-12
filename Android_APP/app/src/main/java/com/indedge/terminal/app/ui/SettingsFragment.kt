@@ -86,7 +86,7 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         loadPrefs()
-        binding.tvVersion.text = "v0.5.0 · MQTT 3.1.1 / BLE GATT / SPP / TCP"
+        binding.tvVersion.text = "v0.7.0 · MQTT 3.1.1 / BLE GATT / SPP / TCP"
 
         binding.btnToggleConnect.setOnClickListener {
             if (MqttManager.connected) {

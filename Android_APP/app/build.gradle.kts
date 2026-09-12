@@ -39,9 +39,13 @@ android {
     }
 
     lint {
-        // 单语种工业运维工具：静态文案以日志/动态消息为主，
-        // 保留其余全部检查（错误级仍终止构建）
+        // 单语种工业运维工具：静态文案以日志/动态消息为主
         disable += setOf("HardcodedText", "SetTextI18n")
+        // 版本钉子策略（内部分发，不上架应用商店）：
+        // targetSdk 与依赖版本在维护窗口统一升级并做真机回归（流程见 README），
+        // 此处固定关闭版本提示类告警，避免每次构建噪音；升级任务单独跟踪。
+        disable += setOf("OldTargetApi", "GradleDependency")
+        abortOnError = true
     }
 }
 
