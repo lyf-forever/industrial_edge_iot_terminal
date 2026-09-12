@@ -1,0 +1,61 @@
+name: Firmware CI
+
+on:
+  push:
+    paths:
+      - 'Industrial_Edge_IoT_Terminal_ESP32S3/**'
+      - 'Industrial_Edge_IoT_Terminal_GD32H7/**'
+      - '.github/workflows/firmware.yml'
+  pull_request:
+    paths:
+      - 'Industrial_Edge_IoT_Terminal_ESP32S3/**'
+      - 'Industrial_Edge_IoT_Terminal_GD32H7/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  esp32s3:
+    name: ESP32S3 Build (ESP-IDF v5.5.4)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5.4
+          target: esp32s3
+          path: 'Industrial_Edge_IoT_Terminal_ESP32S3'
+          command: idf.py build
+
+  gd32h7:
+    name: GD32H7 Build (arm-none-eabi)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build gcc-arm-none-eabi
+
+      - name: Configure
+        working-directory: Industrial_Edge_IoT_Terminal_GD32H7
+        run: cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake
+
+      - name: Build
+        working-directory: Industrial_Edge_IoT_Terminal_GD32H7
+        run: cmake --build build
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gd32h7-firmware
+          path: |
+            Industrial_Edge_IoT_Terminal_GD32H7/build/Industrial_Edge_IoT_Terminal_GD32H7.hex
+            Industrial_Edge_IoT_Terminal_GD32H7/build/Industrial_Edge_IoT_Terminal_GD32H7.bin
+          if-no-files-found: error

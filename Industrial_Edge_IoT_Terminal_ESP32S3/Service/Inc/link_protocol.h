@@ -19,7 +19,7 @@
  *
  * CRC: CRC-16/Modbus，init 0xFFFF，反射多项式 0xA001，线上大端(高字节先发)
  *
- * 字节转义（仅对 addr..crc 区间，不转义帧头帧尾）：
+ * 字节转义（仅对 data 区；addr/cmd/data_len/CRC 不转义）：
  *   0xAA -> 0xCC 0x01, 0x55 -> 0xCC 0x02,
  *   0x0D -> 0xCC 0x03, 0x0A -> 0xCC 0x04, 0xCC -> 0xCC 0xCC
  */
@@ -59,6 +59,7 @@ typedef enum {
     LINK_STATE_CMD,
     LINK_STATE_DATA_LEN,
     LINK_STATE_DATA,
+    LINK_STATE_DATA_ESC,        /* 转义序列第二字节（0xCC 前缀解码） */
     LINK_STATE_CRC1,
     LINK_STATE_CRC2,
     LINK_STATE_TAIL1,

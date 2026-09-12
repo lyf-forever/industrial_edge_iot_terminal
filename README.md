@@ -85,11 +85,12 @@ idf.py -p COMx flash monitor
 
 ```bash
 cd Industrial_Edge_IoT_Terminal_GD32H7
-cmake -B build -DCMAKE_TOOLCHAIN_FILE=<arm-none-eabi-toolchain.cmake>
+cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake
 cmake --build build
 ```
 
 产物为 `build/Industrial_Edge_IoT_Terminal_GD32H7.elf / .bin / .hex`，使用 J-Link / ST-Link 等烧录。
+（仓库自带裸机工具链文件 `cmake/arm-none-eabi.cmake`，指向 `arm-none-eabi-gcc`；任意 generator 均可。）
 
 ### 3. Android APP
 
@@ -101,11 +102,25 @@ gradlew.bat assembleRelease      # 需先配置 keystore.properties（模板见�
 
 推送到 GitHub 自动触发 CI（构建 + 32 项单测 + lint + 模拟器冒烟），产物含 APK 与 lint 报告 artifact。
 
+## 持续集成（CI）
+
+| 工作流 | 覆盖 | 内容 |
+| ---- | ---- | ---- |
+| `android.yml` | Android APP | assembleDebug + 32 项单测 + lint + 模拟器 Espresso 冒烟；产物 APK/lint 报告 |
+| `firmware.yml` | ESP32S3 / GD32H7 | ESP32 用 ESP-IDF v5.5.4 容器构建；GD32 用 arm-none-eabi 构建并上传 hex/bin |
+
+## 协议与联调
+
+- 链路帧协议（v0.7.1 修复后）：`AA 55 | addr cmd len | data(仅此区转义) | CRC16 大端 | 0D 0A`，
+  ESP32 与 GD32 必须同版本（修复了历史 CRC 线序与转义范围不一致）；
+- 双端烧录、BLE/TCP 透传、OTA 闭环的逐步验证见 `docs/bringup_guide.md`。
+
 ## 文档
 
 - 整机总体设计：`docs/smart_iot_terminal_guide.docx`
 - APP 与固件通信契约：`docs/app_firmware_contract.docx`
 - 双端模块分配调研：`docs/project_modDistribution_survey.docx`
+- 双端固件联调快速指南：`docs/bringup_guide.md`
 - ESP32S3 端开发指南：`Industrial_Edge_IoT_Terminal_ESP32S3/docs/esp32s3_site_develop_guide.docx`
 - GD32H7 端开发指南：`Industrial_Edge_IoT_Terminal_GD32H7/docs/gd32h7_site_develop_guide.docx`
 - APP 真机验证清单：`Android_APP/DEVICE_TEST_CHECKLIST.md`

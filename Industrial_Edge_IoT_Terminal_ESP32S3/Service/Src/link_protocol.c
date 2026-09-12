@@ -87,51 +87,40 @@ uint16_t build_frame(uint8_t addr, uint8_t cmd, const uint8_t *data,
                      uint8_t data_len, uint8_t *frame_buf, uint16_t buf_size)
 {
     if (data_len > LINK_MAX_DATA_LEN) return 0;
+    if (frame_buf == NULL) return 0;
 
-    tx_frame_t raw_frame;
-    raw_frame.header[0] = LINK_HEADER_0;
-    raw_frame.header[1] = LINK_HEADER_1;
-    raw_frame.addr  = addr;
-    raw_frame.cmd   = cmd;
-    raw_frame.data_len = data_len;
-    if (data_len > 0 && data != NULL) {
-        memcpy(raw_frame.data, data, data_len);
-    }
-
-    /* 计算CRC（不包括头尾）：addr + cmd + data_len + data */
+    /* CRC 覆盖 addr + cmd + data_len + data（未转义的原始值） */
     uint8_t crc_data[3 + LINK_MAX_DATA_LEN];
     uint8_t crc_len = 0;
-    crc_data[crc_len++] = raw_frame.addr;
-    crc_data[crc_len++] = raw_frame.cmd;
-    crc_data[crc_len++] = raw_frame.data_len;
-    if (raw_frame.data_len > 0) {
-        memcpy(&crc_data[crc_len], raw_frame.data, raw_frame.data_len);
-        crc_len += raw_frame.data_len;
+    crc_data[crc_len++] = addr;
+    crc_data[crc_len++] = cmd;
+    crc_data[crc_len++] = data_len;
+    if (data_len > 0 && data != NULL) {
+        memcpy(&crc_data[crc_len], data, data_len);
+        crc_len += data_len;
     }
-    raw_frame.crc16 = crc16_modbus(crc_data, crc_len);
+    uint16_t crc = crc16_modbus(crc_data, crc_len);
 
-    raw_frame.tail[0] = LINK_TAIL_0;
-    raw_frame.tail[1] = LINK_TAIL_1;
+    /* 长度上界：帧头2 + addr/cmd/len 3 + data 最坏2倍 + crc 2 + 帧尾2 */
+    uint16_t need = (uint16_t)(2 + 3 + (uint16_t)(2 * data_len) + 2 + 2);
+    if (need > buf_size) return 0;
 
-    /* 将原始帧中间区段(去除帧头帧尾)转为字节数组 */
-    uint8_t raw_buffer[sizeof(tx_frame_t) - 4U];
-    memcpy(raw_buffer, &raw_frame.addr, sizeof(tx_frame_t) - 4U);
+    /* 线上帧：转义仅作用于 data 区；CRC 线上大端（高字节先发） */
+    uint16_t i = 0;
+    frame_buf[i++] = LINK_HEADER_0;
+    frame_buf[i++] = LINK_HEADER_1;
+    frame_buf[i++] = addr;
+    frame_buf[i++] = cmd;
+    frame_buf[i++] = data_len;
+    if (data_len > 0 && data != NULL) {
+        i += byte_stuff(data, data_len, &frame_buf[i]);
+    }
+    frame_buf[i++] = (uint8_t)(crc >> 8);
+    frame_buf[i++] = (uint8_t)(crc & 0xFF);
+    frame_buf[i++] = LINK_TAIL_0;
+    frame_buf[i++] = LINK_TAIL_1;
 
-    /* 转义缓冲区：最坏情况每字节变两字节 */
-    uint8_t escaped_buf[2 * (sizeof(tx_frame_t) - 4U)];
-    uint16_t escaped_len = byte_stuff(raw_buffer, sizeof(tx_frame_t) - 4U, escaped_buf);
-
-    /* 总长 = 帧头2 + 转义体 + 帧尾2 */
-    uint16_t total = escaped_len + 4;
-    if (total > buf_size) return 0;
-
-    frame_buf[0] = raw_frame.header[0];
-    frame_buf[1] = raw_frame.header[1];
-    memcpy(&frame_buf[2], escaped_buf, escaped_len);
-    frame_buf[2 + escaped_len]     = raw_frame.tail[0];
-    frame_buf[2 + escaped_len + 1] = raw_frame.tail[1];
-
-    return total;
+    return i;
 }
 
 /* ===================== 帧验证（对已解转义帧） ====================== *
@@ -216,8 +205,26 @@ bool link_parse_byte(link_parse_ctx_t *ctx, uint8_t byte)
             break;
 
         case LINK_STATE_DATA:
-            ctx->data[ctx->data_index++] = byte;
-            if (ctx->data_index >= ctx->data_len) ctx->state = LINK_STATE_CRC1;
+            /* 支持字节转义：0xCC 前缀进入转义解码（与 GD32H7 端一致） */
+            if (byte == 0xCC) {
+                ctx->state = LINK_STATE_DATA_ESC;
+            } else {
+                ctx->data[ctx->data_index++] = byte;
+                if (ctx->data_index >= ctx->data_len) ctx->state = LINK_STATE_CRC1;
+            }
+            break;
+
+        case LINK_STATE_DATA_ESC:
+            if (byte == 0x01)      ctx->data[ctx->data_index++] = 0xAA;
+            else if (byte == 0x02) ctx->data[ctx->data_index++] = 0x55;
+            else if (byte == 0x03) ctx->data[ctx->data_index++] = 0x0D;
+            else if (byte == 0x04) ctx->data[ctx->data_index++] = 0x0A;
+            else if (byte == 0xCC) ctx->data[ctx->data_index++] = 0xCC;
+            else {
+                ctx->state = LINK_STATE_IDLE;   /* 非法转义：丢弃整帧 */
+                break;
+            }
+            ctx->state = (ctx->data_index >= ctx->data_len) ? LINK_STATE_CRC1 : LINK_STATE_DATA;
             break;
 
         case LINK_STATE_CRC1:
