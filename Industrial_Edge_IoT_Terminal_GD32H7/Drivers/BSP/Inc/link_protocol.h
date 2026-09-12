@@ -3,6 +3,7 @@
 
 #include "crc.h"
 #include <stdint.h>
+#include <stdbool.h>
 
 /* 帧常量定义 */
 #define LINK_HEADER_0      0xAA
