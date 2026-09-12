@@ -161,12 +161,12 @@ object MqttManager {
 
     private val mqttCallback = object : MqttCallbackExtended {
 
-        override fun connectComplete(reconnect: Boolean, serverURI: String) {
+        override fun connectComplete(reconnected: Boolean, serverURI: String) {
             connecting = false
             // 连接成功：清零退避计数并停止待执行的重连
             reconnect.reset()
             subscribeAll()
-            val detail = if (reconnect) "重连成功: $serverURI" else "连接成功: $serverURI"
+            val detail = if (reconnected) "重连成功: $serverURI" else "连接成功: $serverURI"
             notifyConnection(true, detail)
         }
 
