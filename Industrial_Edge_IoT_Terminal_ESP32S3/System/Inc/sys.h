@@ -71,8 +71,13 @@
 /* ===================== 无线透传桥（APP 直连通道） ===================== */
 /* BLE GATT Server（Nordic UART Service，契约见 docs/app_firmware_contract.docx） */
 #define BleGattUse   1     /* 0: 不使用 1: 启用 BLE GATT 透传（与服务端契约对齐） */
-/* LAN TCP 透传服务器 + mDNS 广播（_ind_edge._tcp:8080） */
+/* LAN TCP 透传服务器（端口 8080） */
 #define TcpSrvUse    1     /* 0: 不使用 1: 启用 TCP 透传服务 */
+/* mDNS 广播（_ind_edge._tcp:8080）：
+ * v5.5 起 mdns 已移出 IDF 核心，需组件管理器引入后开启：
+ *   idf.py add-dependency "espressif/mdns"
+ * 并在 main/CMakeLists.txt 的 PRIV_REQUIRES 追加 mdns */
+#define MdnsUse      0     /* 0: 关闭（默认） 1: 启用 mDNS（需先引入组件） */
 
 /* 固件版本（status 上报 "ver" 字段，供 APP 展示/对账） */
 #define AppFwVersion "0.5.0-esp"

@@ -31,7 +31,9 @@
 #if TcpSrvUse
 #include "lwip/sockets.h"
 #include "lwip/inet.h"
+#if MdnsUse
 #include "mdns.h"
+#endif
 #endif
 
 static const char *TAG = "net_bridge";
@@ -67,6 +69,10 @@ static const uint8_t UUID_TX[16] = {
 #define ADV_NAME       "ind_edge_esp32s3"
 
 static esp_gatt_if_t s_gatts_if = ESP_GATT_IF_NONE;
+
+/* 特征添加顺序状态机（v5.5 ADD_CHAR_EVT 不再回传 uuid） */
+enum { ST_IDLE = 0, ST_WAIT_RX, ST_WAIT_TX };
+static int s_add_state = ST_IDLE;
 static uint16_t s_conn_id = 0xFFFF;
 static uint16_t s_svc_h = 0;
 static uint16_t s_rx_h = 0;
@@ -95,7 +101,7 @@ static void start_advertising(void)
         .adv_int_max = 0x40,
         .adv_type = ADV_TYPE_IND,
         .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
-        .channel_map = ADV_CHANNEL_ALL,
+        .channel_map = ADV_CHNL_ALL,
         .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     };
     esp_ble_gap_start_advertising(&params);
@@ -129,7 +135,6 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 
 static void start_adv_config(void)
 {
-    esp_bt_uuid_t svc = uuid128(UUID_SVC);
     esp_ble_adv_data_t adv = {
         .set_scan_rsp = false,
         .include_name = false,
@@ -137,7 +142,8 @@ static void start_adv_config(void)
         .min_interval = 0x20,
         .max_interval = 0x40,
         .appearance = 0x00,
-        .service_uuid = &svc,
+        .service_uuid_len = 16,
+        .p_service_uuid = (uint8_t *)UUID_SVC,
     };
     esp_ble_gap_config_adv_data(&adv);
 
@@ -198,21 +204,22 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         case ESP_GATTS_CREATE_EVT:
             s_svc_h = param->create.service_handle;
             ESP_LOGI(TAG, "NUS service created, handle=%d", s_svc_h);
+            s_add_state = ST_WAIT_RX;
             add_rx_char();
             break;
-        case ESP_GATTS_ADD_CHAR_EVT: {
-            const esp_bt_uuid_t *u = &param->add_char.uuid;
-            if (u->len == ESP_UUID_LEN_128 && memcmp(u->uuid.uuid128, UUID_RX, 16) == 0) {
-                s_rx_h = param->add_char.attrib_handle;
+        case ESP_GATTS_ADD_CHAR_EVT:
+            if (s_add_state == ST_WAIT_RX) {
+                s_rx_h = param->add_char.attr_handle;
+                s_add_state = ST_WAIT_TX;
                 add_tx_char();
-            } else if (u->len == ESP_UUID_LEN_128 && memcmp(u->uuid.uuid128, UUID_TX, 16) == 0) {
-                s_tx_h = param->add_char.attrib_handle;
+            } else if (s_add_state == ST_WAIT_TX) {
+                s_tx_h = param->add_char.attr_handle;
+                s_add_state = ST_IDLE;
                 add_cccd_descr();
             }
             break;
-        }
         case ESP_GATTS_ADD_CHAR_DESCR_EVT:
-            s_cccd_h = param->add_char_descr.attrib_handle;
+            s_cccd_h = param->add_char_descr.attr_handle;
             esp_ble_gatts_start_service(s_svc_h);
             ESP_LOGI(TAG, "NUS ready (rx=%d tx=%d cccd=%d)", s_rx_h, s_tx_h, s_cccd_h);
             break;
@@ -392,6 +399,7 @@ static void tcp_broadcast(const uint8_t *data, uint16_t len)
     xSemaphoreGive(s_cli_mutex);
 }
 
+#if MdnsUse
 static void mdns_start(void)
 {
     if (mdns_init() != ESP_OK) {
@@ -403,6 +411,9 @@ static void mdns_start(void)
     mdns_service_add(NULL, "_ind_edge", "_tcp", TCP_PORT, NULL, 0);
     ESP_LOGI(TAG, "mDNS: ind-edge.local / _ind_edge._tcp:%d", TCP_PORT);
 }
+#else
+static void mdns_start(void) { /* MdnsUse=0：跳过（见 sys.h 说明） */ }
+#endif
 
 static void tcp_start(void)
 {

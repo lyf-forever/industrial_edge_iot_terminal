@@ -29,5 +29,6 @@ idf_component_register(
                   esp_http_client
                   bt
                   lwip
-                  mdns
+                  # 启用 MdnsUse 时需：idf.py add-dependency "espressif/mdns"
+                  # 并在此追加 mdns
 )
