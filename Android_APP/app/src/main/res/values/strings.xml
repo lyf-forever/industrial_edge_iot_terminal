@@ -42,6 +42,11 @@
     <string name="csv_export_fail">CSV 导出失败</string>
     <string name="export_title">导出</string>
     <string name="stats_empty">暂无统计数据</string>
+    <string name="history_empty">暂无历史数据</string>
+    <string name="history_cleared">历史数据已清空</string>
+    <string name="dbg_topic_required">请输入主题</string>
+    <string name="published">已发布</string>
+    <string name="publish_fail">发布失败</string>
     <string name="stats_row">%1$s  均温 %2$s ℃ · 均湿 %3$s %% · 气体峰值 %4$d ppm</string>
     <string name="stats_title">近 24 小时统计（按小时）</string>
     <string name="clear_alarms">清空</string>
@@ -155,6 +160,7 @@
     <string name="cfg_read_fail">读取文件失败</string>
     <string name="cfg_saved">配置已保存</string>
     <string name="cfg_saved_connected">配置已保存（连接中，重新连接后生效）</string>
+    <string name="about">关于</string>
     <string name="link_busy">连接正在建立中，请稍候</string>
     <string name="bt_item_connected">%1$s · 已连接</string>
 </resources>

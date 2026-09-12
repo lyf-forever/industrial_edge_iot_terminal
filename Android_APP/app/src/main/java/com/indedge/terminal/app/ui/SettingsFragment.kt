@@ -7,8 +7,10 @@ import android.view.ViewGroup
 import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.indedge.terminal.app.BuildConfig
 import com.indedge.terminal.app.R
 import com.indedge.terminal.app.ble.BleProfile
 import com.indedge.terminal.app.databinding.FragmentSettingsBinding
@@ -16,6 +18,7 @@ import com.indedge.terminal.app.mqtt.MqttManager
 import com.indedge.terminal.app.mqtt.MqttProtocol
 import com.indedge.terminal.app.net.TcpProfile
 import com.indedge.terminal.app.service.MqttForegroundService
+import com.indedge.terminal.app.util.AppInfo
 import com.indedge.terminal.app.util.ConfigBackup
 import com.indedge.terminal.app.util.Prefs
 import com.indedge.terminal.app.util.ShareUtils
@@ -117,6 +120,7 @@ class SettingsFragment : Fragment() {
         binding.btnImportCfg.setOnClickListener {
             importLauncher.launch(arrayOf("application/json", "application/octet-stream"))
         }
+        binding.btnAbout.setOnClickListener { showAbout() }
 
         vm.connection.observe(viewLifecycleOwner) { st ->
             binding.tvConnState.text = if (st.connected) "已连接" else "未连接"
@@ -128,6 +132,25 @@ class SettingsFragment : Fragment() {
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
+    }
+
+    // ================= 关于 =================
+
+    private fun showAbout() {
+        val ctx = requireContext()
+        val info = ctx.packageManager.getPackageInfo(ctx.packageName, 0).applicationInfo
+        val msg = buildString {
+            append("应用版本：${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）\n")
+            append("构建时间：${BuildConfig.BUILD_TIME}\n")
+            append("SDK：min ${info.minSdkVersion} / target ${info.targetSdkVersion}\n")
+            append("通信契约：${AppInfo.CONTRACT_VERSION}\n")
+            append("开源许可：GPL-3.0")
+        }
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.about)
+            .setMessage(msg)
+            .setPositiveButton(R.string.close, null)
+            .show()
     }
 
     // ================= 配置备份/恢复 =================
