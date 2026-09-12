@@ -4,6 +4,7 @@
  *****************************************************************************/
 
 #include "HC05.h"
+#include <stdbool.h>
 #include "bsp_8080_lcd.h"
 #include "lcd_font.h"
 #include <stdint.h>

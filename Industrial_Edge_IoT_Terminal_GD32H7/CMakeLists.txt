@@ -28,6 +28,9 @@ enable_language(ASM)  # 启用汇编语言支持
 # 设置编译选项
 add_compile_options(${COMMON_FLAGS})
 
+# 统一 C 语言标准（避免不同 GCC 默认标准差异：本地 GCC15 默认 gnu23，CI GCC13 为 gnu17）
+add_compile_options($<$<COMPILE_LANGUAGE:C>:-std=gnu17>)
+
 # # 为汇编语言启用预处理功能（如果启动文件是 .S 后缀）
 # add_compile_options(
 #     $<$<COMPILE_LANGUAGE:ASM>:-x assembler-with-cpp>
