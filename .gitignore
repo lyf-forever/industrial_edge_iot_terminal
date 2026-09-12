@@ -62,3 +62,9 @@ Desktop.ini
 *.log
 *.tmp
 *.bak
+
+# GD32H7 仓库自带交叉编译工具链文件（仅白名单该文件）
+!Industrial_Edge_IoT_Terminal_GD32H7/cmake/
+Industrial_Edge_IoT_Terminal_GD32H7/cmake/*
+!Industrial_Edge_IoT_Terminal_GD32H7/cmake/arm-none-eabi.cmake
+
