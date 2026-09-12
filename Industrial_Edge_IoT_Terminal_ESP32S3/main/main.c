@@ -35,6 +35,9 @@
 #if CloudUse
 #include "cloud_bridge.h"
 #endif
+#if BleGattUse || TcpSrvUse
+#include "net_bridge.h"
+#endif
 #if EventBusUse
 #include "event_bus.h"
 #if LinkUse
@@ -168,6 +171,11 @@ static const mod_init_item_t initTable[] = {
     MOD_INIT_ITEM("cloud_br",   INIT_STAGE_SOFTWARE, cloud_bridge_init, NULL,
                   BIT_MOD(MOD_EVENT_BUS) | BIT_MOD(MOD_MQTT), MOD_CLOUD),
 #endif
+#if (BleGattUse || TcpSrvUse) && EventBusUse && LinkUse
+    /* 无线透传桥（BLE NUS + TCP Server）：依赖事件总线/通道（经 event_ipc 喂包/广播） */
+    MOD_INIT_ITEM("net_bridge", INIT_STAGE_SOFTWARE, net_bridge_init, NULL,
+                  BIT_MOD(MOD_EVENT_BUS) | BIT_MOD(MOD_CHANNEL), MOD_MAX),
+#endif
 };
 #else
 /* 传统 initItem 表（ModRegUse=0 时回退） */
@@ -211,6 +219,9 @@ static const initItem initTable[] = {
 #if CloudUse
     INIT_ITEM("cloud_br",   INIT_STAGE_SOFTWARE, cloud_bridge_init, NULL, 0),
 #endif
+#if (BleGattUse || TcpSrvUse) && EventBusUse && LinkUse
+    INIT_ITEM("net_bridge", INIT_STAGE_SOFTWARE, net_bridge_init, NULL, 0),
+#endif
 };
 
 /* 初始化调度器：按阶段顺序执行表内所有项 */
@@ -235,15 +246,14 @@ static void initTable_run(const initItem *table, size_t count)
 /* 应用配置：包括模块片上外设初始化、软件初始化 */
 static inline void System_Module_Init(void)
 {
+#define INIT_TABLE_SIZE  (sizeof(initTable) / sizeof(initTable[0]))
 #if ModRegUse
-    uint16_t hw = mod_registry_run_stage(initTable, sizeof(initTable) / sizeof(initTable[0]),
-                                         INIT_STAGE_HARDWARE);
-    uint16_t sw = mod_registry_run_stage(initTable, sizeof(initTable) / sizeof(initTable[0]),
-                                         INIT_STAGE_SOFTWARE);
+    uint16_t hw = mod_registry_run_stage(initTable, INIT_TABLE_SIZE, INIT_STAGE_HARDWARE);
+    uint16_t sw = mod_registry_run_stage(initTable, INIT_TABLE_SIZE, INIT_STAGE_SOFTWARE);
     ESP_LOGI(TAG, "init done: hw=%u sw=%u", hw, sw);
-    mod_registry_dump(initTable, sizeof(initTable) / sizeof(initTable[0]), INIT_STAGE_SOFTWARE);
+    mod_registry_dump(initTable, INIT_TABLE_SIZE, INIT_STAGE_SOFTWARE);
 #else
-    initTable_run(initTable, sizeof(initTable) / sizeof(initTable[0]));
+    initTable_run(initTable, INIT_TABLE_SIZE);
 #endif
 }
 

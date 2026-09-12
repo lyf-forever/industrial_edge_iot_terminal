@@ -27,4 +27,7 @@ idf_component_register(
                   app_update
                   esp_system
                   esp_http_client
+                  bt
+                  lwip
+                  mdns
 )

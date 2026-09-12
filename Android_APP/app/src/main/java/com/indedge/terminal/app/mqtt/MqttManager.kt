@@ -39,6 +39,8 @@ object MqttProtocol {
     const val TOPIC_ALARM = "ind_edge/terminal/alarm"
     const val TOPIC_STATUS = "ind_edge/terminal/status"
     const val TOPIC_CMD = "ind_edge/terminal/cmd"
+    const val TOPIC_OTA = "ind_edge/terminal/ota"
+    const val TOPIC_ACK = "ind_edge/terminal/ack"
 
     fun defaultClientId(): String = DEFAULT_CLIENT_ID_PREFIX + UUID.randomUUID()
         .toString().take(8)
@@ -213,6 +215,8 @@ object MqttManager {
             client?.subscribe(MqttProtocol.TOPIC_SENSORS, 1)
             client?.subscribe(MqttProtocol.TOPIC_ALARM, 1)
             client?.subscribe(MqttProtocol.TOPIC_STATUS, 1)
+            client?.subscribe(MqttProtocol.TOPIC_OTA, 1)
+            client?.subscribe(MqttProtocol.TOPIC_ACK, 1)
         } catch (e: MqttException) {
             notifyConnection(false, "订阅失败: ${e.message}")
         }

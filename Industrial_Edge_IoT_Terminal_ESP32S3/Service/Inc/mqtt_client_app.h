@@ -24,6 +24,8 @@
 #define MQTT_TOPIC_ALARM_TX     "ind_edge/terminal/alarm"     /* 上行：报警 */
 #define MQTT_TOPIC_CMD_RX      "ind_edge/terminal/cmd"        /* 下行：控制命令(JSON) */
 #define MQTT_TOPIC_STATUS_TX   "ind_edge/terminal/status"     /* 上行：状态/心跳 */
+#define MQTT_TOPIC_OTA_TX      "ind_edge/terminal/ota"        /* 上行：OTA 进度/结果 */
+#define MQTT_TOPIC_ACK_TX      "ind_edge/terminal/ack"        /* 上行：命令执行回执 */
 
 /* QoS 级别 */
 #define MQTT_QOS_TX   1

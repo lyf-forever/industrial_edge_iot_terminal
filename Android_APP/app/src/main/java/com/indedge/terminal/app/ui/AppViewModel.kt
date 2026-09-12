@@ -33,6 +33,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mq
     data class PubEvent(val topic: String, val ok: Boolean)
     data class AlarmEvent(val id: Int, val level: Int, val value: Int, val line: String)
 
+    /** OTA 进度/结果（契约 6.1：state 0待下载 1下载中 2校验切换 3成功 4失败） */
+    data class OtaState(val state: Int, val pct: Int, val detail: String)
+
     companion object {
         const val SERIES_COUNT = 5
         const val SERIES_MAX = 60
@@ -62,6 +65,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mq
     // ---- 心跳 / 在线 ----
     val online = MutableLiveData(false)
     val hbLine = MutableLiveData("暂无心跳 · 运行 —")
+
+    /** 设备版本（status 的 ver 字段，固件上报） */
+    val deviceVersion = MutableLiveData<String?>(null)
+
+    /** OTA 进度状态 */
+    val otaState = MutableLiveData<OtaState?>(null)
 
     // ---- 命令历史（oldest-first） ----
     val cmdEvent = MutableLiveData<String?>(null)
@@ -105,6 +114,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mq
             MqttProtocol.TOPIC_SENSORS -> onSensors(payload)
             MqttProtocol.TOPIC_ALARM -> onAlarm(payload)
             MqttProtocol.TOPIC_STATUS -> onStatus(payload)
+            MqttProtocol.TOPIC_OTA -> onOta(payload)
+            MqttProtocol.TOPIC_ACK -> onAck(payload)
         }
     }
 
@@ -171,9 +182,41 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mq
             val o = JSONObject(payload)
             lastHeartbeatAt = System.currentTimeMillis()
             lastUptime = o.optLong("uptime_s")
+            val ver = o.optString("ver", "")
+            if (ver.isNotEmpty()) {
+                deviceVersion.value = ver
+            }
             updateOnline()
         } catch (_: Exception) {
             appendLog("状态报文解析失败: $payload")
+        }
+    }
+
+    /** OTA 进度（契约 6.1） */
+    private fun onOta(payload: String) {
+        try {
+            val o = JSONObject(payload)
+            val state = o.optInt("state", -1)
+            val pct = o.optInt("pct", -1)
+            val detail = o.optString("detail", "")
+            if (state >= 0) {
+                otaState.value = OtaState(state, pct, detail)
+            }
+        } catch (_: Exception) {
+            appendLog("OTA 报文解析失败: $payload")
+        }
+    }
+
+    /** 命令执行回执（契约 6.2）：追加到命令历史 */
+    private fun onAck(payload: String) {
+        try {
+            val o = JSONObject(payload)
+            val cmd = o.optString("cmd", "?")
+            val result = o.optInt("result", -1)
+            val mark = if (result == 0) "设备已执行" else "设备拒绝/失败(result=$result)"
+            appendCmd("  回执[$cmd] $mark")
+        } catch (_: Exception) {
+            appendLog("回执报文解析失败: $payload")
         }
     }
 

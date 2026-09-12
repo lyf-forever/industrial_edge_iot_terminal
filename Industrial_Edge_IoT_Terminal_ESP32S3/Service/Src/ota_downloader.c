@@ -19,19 +19,51 @@
 #include "freertos/task.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <strings.h>
+#if MqttUse
+#include "mqtt_client_app.h"
+/* OTA 进度/结果上行（契约 6.1）：state 0待下载 1下载中 2校验切换 3成功 4失败 */
+#define OTA_REPORT(state_, pct_, detail_)                                    \
+    do {                                                                     \
+        char j_[96];                                                         \
+        int n_ = snprintf(j_, sizeof(j_),                                    \
+            "{\"state\":%d,\"pct\":%d,\"detail\":\"%s\"}",                   \
+            (state_), (pct_), (detail_));                                    \
+        if (n_ > 0) mqtt_client_app_publish(MQTT_TOPIC_OTA_TX, j_, n_);      \
+    } while (0)
+#else
+#define OTA_REPORT(state_, pct_, detail_) ((void)0)
+#endif
 
 static const char *TAG = "ota_dl";
 
 #define OTA_RECV_BUF  4096
+#define OTA_REPORT_STEP 65536   /* 进度上报节流：每 64KB */
 
 static int s_last_result = 0;
 static uint32_t s_downloaded = 0;
+static uint32_t s_total_len = 0;      /* 由 Content-Length 头获取，未知为 0 */
+static uint32_t s_last_report = 0;
 static ota_progress_cb_t s_prog_cb = NULL;
+
+static int ota_percent(void)
+{
+    if (s_total_len == 0) return -1;   /* 流式未知总长 */
+    uint32_t pct = (uint32_t)((uint64_t)s_downloaded * 100u / s_total_len);
+    return pct > 100 ? 100 : (int)pct;
+}
 
 /* HTTP 事件处理：流式写入 ota_mgr */
 static esp_err_t http_evt_handler(esp_http_client_event_t *evt)
 {
     switch (evt->event_id) {
+        case HTTP_EVENT_ON_HEADER:
+            if (evt->header_key && evt->header_value &&
+                strcasecmp(evt->header_key, "Content-Length") == 0) {
+                s_total_len = (uint32_t)strtoul(evt->header_value, NULL, 10);
+            }
+            break;
         case HTTP_EVENT_ON_DATA:
             if (evt->data_len > 0) {
                 int r = ota_mgr_feed((const uint8_t *)evt->data, evt->data_len);
@@ -41,6 +73,10 @@ static esp_err_t http_evt_handler(esp_http_client_event_t *evt)
                     return ESP_FAIL;
                 }
                 s_downloaded += evt->data_len;
+                if (s_last_report == 0 || s_downloaded - s_last_report >= OTA_REPORT_STEP) {
+                    s_last_report = s_downloaded;
+                    OTA_REPORT(1, ota_percent(), "downloading");
+                }
                 if (s_prog_cb) {
                     s_prog_cb(s_downloaded, 0, NULL);   /* total 未知(HTTP 流式) */
                 }
@@ -64,14 +100,18 @@ int ota_downloader_start(const char *url, const char *username,
 
     s_prog_cb = cb;
     s_downloaded = 0;
+    s_total_len = 0;
+    s_last_report = 0;
     s_last_result = 0;
 
     /* 启动 OTA 会话（获取备用分区 + esp_ota_begin） */
     if (ota_mgr_begin(url) != 0) {
         ESP_LOGE(TAG, "ota_mgr_begin failed");
         s_last_result = OTA_RESULT_DOWNLOAD_ERR;
+        OTA_REPORT(4, -1, "begin failed");
         return -1;
     }
+    OTA_REPORT(1, 0, "start");
 
     esp_http_client_config_t cfg = {
         .url = url,
@@ -98,16 +138,20 @@ int ota_downloader_start(const char *url, const char *username,
 
     if (err == ESP_OK) {
         /* 下载完成：校验并提交 */
+        OTA_REPORT(2, 100, "verifying");
         if (ota_mgr_finish() != 0) {
             s_last_result = OTA_RESULT_VERIFY_ERR;
+            OTA_REPORT(4, 100, "verify failed");
             return -2;
         }
         s_last_result = OTA_RESULT_OK;
+        OTA_REPORT(3, 100, "done");
         ESP_LOGI(TAG, "OTA download+verify OK");
         return 0;
     }
 
     s_last_result = OTA_RESULT_DOWNLOAD_ERR;
+    OTA_REPORT(4, ota_percent(), "download error");
     ESP_LOGE(TAG, "HTTP perform failed: %s", esp_err_to_name(err));
     ota_mgr_abort();
     return (int)-err;

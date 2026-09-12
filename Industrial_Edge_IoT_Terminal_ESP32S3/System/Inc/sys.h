@@ -27,46 +27,55 @@
 #define CloudUse     1     /* 0: 不使用云端桥接 1：使用云端桥接 */
 
 /* 事件总线（系统级消息中枢，跨核透明发布订阅） */
-#define EventBusUse 1     /* 0: 不使用事件总线 1：使用事件总线 */
+#define EventBusUse  1     /* 0: 不使用事件总线 1：使用事件总线 */
 
 /* 连接层次状态机（HSM，订阅通信状态事件驱动指示灯） */
-#define HsmUse      1     /* 0: 不使用HSM 1：使用HSM */
+#define HsmUse       1     /* 0: 不使用HSM 1：使用HSM */
 
 /* ===================== 新架构扩展（software_architecture 文档 3.x） ====== */
 /* 3.1 模块注册表与依赖（激活 initItem.depends_on 拓扑排序） */
-#define ModRegUse   1
+#define ModRegUse    1
 /* 3.6 内存池/对象池（PSRAM 定长块位图分配）
  * IRAM 裁剪：mempool_alloc/free 无任何调用者，关闭以减小固件体积 */
-#define MemPoolUse  0
+#define MemPoolUse   0
 /* 3.8 软定时器轮（1/10/100ms 三层时间轮）
  * IRAM 裁剪：soft_timer_add/del 无调用者（系统节拍由 TTS 提供），关闭 */
 #define SoftTimerUse 0
 /* 3.3 通道抽象（channel_t 接口 + UART 实现 + SPI 占位） */
-#define ChannelUse  1
+#define ChannelUse   1
 /* 3.3b HS-SPI 真实通道驱动（依赖 ChannelUse；0 则用 SPI 占位 stub）
  * IRAM 裁剪：SPI 从机侧未完成联调（RX 无轮询、切换后回调不生效），
  * 关闭可移除 SPI master 驱动 ISR 的 IRAM 占用；联调完成后置 1 */
 #define ChannelSpiUse 0
 /* 3.7 命令分发器（命令表 + ACL） */
-#define CmdUse      1
+#define CmdUse       1
 /* 3.10 通用 HSM 框架（泛化 conn_hsm） */
-#define HsmFwUse    1
+#define HsmFwUse     1
 /* 3.9 结构化日志框架 */
-#define LogUse      1
+#define LogUse       1
 /* 3.5 时间触发调度器 TTS */
-#define TtsUse      1
+#define TtsUse       1
 /* 3.4 Actor 模型（消息队列任务）
  * IRAM 裁剪：actor_post 无调用者（日志落盘 Actor 仅为演示），关闭 */
-#define ActorUse    0
+#define ActorUse     0
 /* 3.2 主题化发布订阅（分层主题 + 通配）
  * IRAM 裁剪：topic_subscribe 无调用者，关闭 */
-#define TopicUse    0
+#define TopicUse     0
 /* 3.12 安全凭证管理器（NVS） */
-#define CredUse     1
+#define CredUse      1
 /* 3.11 A/B 分区 OTA 状态机 */
-#define OtaUse      1
+#define OtaUse       1
 /* 3.13 边缘 AI 推理管线（轻量异常检测） */
-#define AiUse       1
+#define AiUse        1
+
+/* ===================== 无线透传桥（APP 直连通道） ===================== */
+/* BLE GATT Server（Nordic UART Service，契约见 docs/app_firmware_contract.docx） */
+#define BleGattUse   1     /* 0: 不使用 1: 启用 BLE GATT 透传（与服务端契约对齐） */
+/* LAN TCP 透传服务器 + mDNS 广播（_ind_edge._tcp:8080） */
+#define TcpSrvUse    1     /* 0: 不使用 1: 启用 TCP 透传服务 */
+
+/* 固件版本（status 上报 "ver" 字段，供 APP 展示/对账） */
+#define AppFwVersion "0.5.0-esp"
 
 /* API declare */
 void delay_us(uint32_t us);

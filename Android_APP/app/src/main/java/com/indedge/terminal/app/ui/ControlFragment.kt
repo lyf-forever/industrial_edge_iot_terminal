@@ -65,9 +65,41 @@ class ControlFragment : Fragment() {
             binding.tvConnDetail.text = st.detail
         }
         vm.cmdEvent.observe(viewLifecycleOwner) { refreshCmdHistory() }
+        vm.otaState.observe(viewLifecycleOwner) { st ->
+            if (st == null) return@observe
+            updateOtaUi(st)
+        }
 
         refreshCmdHistory()
         renderTemplates()
+    }
+
+    /** OTA 进度/结果展示（契约 6.1 状态机） */
+    private fun updateOtaUi(st: AppViewModel.OtaState) {
+        val text = when (st.state) {
+            0 -> "OTA：待下载"
+            1 -> if (st.pct >= 0) "OTA：下载中 ${st.pct}%" else "OTA：下载中…"
+            2 -> "OTA：校验并切换分区…"
+            3 -> "OTA：升级完成，设备即将重启"
+            else -> "OTA：失败（${st.detail}）"
+        }
+        binding.tvOtaState.text = text
+        when {
+            st.state == 1 && st.pct >= 0 -> {
+                binding.pbOta.visibility = View.VISIBLE
+                binding.pbOta.isIndeterminate = false
+                binding.pbOta.progress = st.pct
+            }
+            st.state == 1 -> {
+                binding.pbOta.visibility = View.VISIBLE
+                binding.pbOta.isIndeterminate = true
+            }
+            st.state == 2 -> {
+                binding.pbOta.visibility = View.VISIBLE
+                binding.pbOta.isIndeterminate = true
+            }
+            else -> binding.pbOta.visibility = View.GONE
+        }
     }
 
     // ================= 命令模板 =================

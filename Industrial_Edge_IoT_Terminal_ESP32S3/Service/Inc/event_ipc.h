@@ -31,6 +31,9 @@ void event_ipc_init(void *arg);
 /* （可选）任务：周期性时间同步/链路健康检测，由任务表创建 */
 void event_ipc_task(void *arg);
 
+/* 外部字节流喂入 link 解析（BLE/TCP 透传桥收包后调用） */
+void event_ipc_feed_rx(const uint8_t *data, uint16_t len);
+
 /* 获取链路统计：收/发事件帧计数 */
 uint32_t event_ipc_tx_count(void);
 uint32_t event_ipc_rx_count(void);

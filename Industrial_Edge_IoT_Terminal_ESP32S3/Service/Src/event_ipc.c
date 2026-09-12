@@ -21,6 +21,9 @@
 #include "link_protocol.h"
 #include "link_payload.h"
 #include "bsp_uart.h"
+#if BleGattUse || TcpSrvUse
+#include "net_bridge.h"
+#endif
 #if ChannelUse
 #include "channel.h"
 #endif
@@ -74,6 +77,10 @@ static void on_event_for_remote(uint16_t event_id, const uint8_t *payload,
         channel_send(frame, flen);
 #else
         bsp_uart_send(frame, flen);
+#endif
+#if BleGattUse || TcpSrvUse
+        /* 无线透传桥镜像广播：BLE notify + TCP 客户端（跨核事件对 APP 可见） */
+        net_bridge_broadcast(frame, flen);
 #endif
         s_tx_cnt++;
     } else {
@@ -215,5 +222,12 @@ void event_ipc_task(void *arg)
 
 uint32_t event_ipc_tx_count(void) { return s_tx_cnt; }
 uint32_t event_ipc_rx_count(void) { return s_rx_cnt; }
+
+/* 外部字节流（BLE/TCP 透传桥）喂入同一 link 解析管线 */
+void event_ipc_feed_rx(const uint8_t *data, uint16_t len)
+{
+    if (data == NULL || len == 0) return;
+    link_parse_buffer(&s_link_ctx, data, len);
+}
 
 #endif /* EventBusUse && LinkUse */

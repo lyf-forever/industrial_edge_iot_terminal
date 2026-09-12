@@ -30,6 +30,7 @@ class StatusFragment : Fragment() {
 
     private val vm: AppViewModel by activityViewModels()
     private var debugPanel: DebugPanel? = null
+    private var fwVer: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -135,7 +136,12 @@ class StatusFragment : Fragment() {
             )
         }
         vm.hbLine.observe(viewLifecycleOwner) { line ->
-            binding.tvLastHb.text = line
+            binding.tvLastHb.text = if (fwVer.isNullOrEmpty()) line else "$line · FW $fwVer"
+        }
+        vm.deviceVersion.observe(viewLifecycleOwner) { v ->
+            fwVer = v
+            val base = vm.hbLine.value ?: ""
+            binding.tvLastHb.text = if (v.isNullOrEmpty()) base else "$base · FW $v"
         }
         vm.sensorLatest.observe(viewLifecycleOwner) { d ->
             if (d == null) return@observe

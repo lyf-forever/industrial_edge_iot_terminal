@@ -18,6 +18,7 @@
  */
 
 #include "cloud_bridge.h"
+#include "sys.h"
 
 #if CloudUse
 
@@ -108,9 +109,10 @@ static void on_heartbeat(uint16_t event_id, const uint8_t *payload,
     if (!mqtt_client_app_is_connected()) return;
     char json[128];
     int n = snprintf(json, sizeof(json),
-        "{\"heartbeat\":%u,\"uptime_s\":%u}",
+        "{\"heartbeat\":%u,\"uptime_s\":%u,\"ver\":\"%s\"}",
         (unsigned)(xTaskGetTickCount() / configTICK_RATE_HZ / 10),   /* 粗略计数 */
-        (unsigned)(xTaskGetTickCount() / configTICK_RATE_HZ));
+        (unsigned)(xTaskGetTickCount() / configTICK_RATE_HZ),
+        AppFwVersion);
     if (n > 0) {
         mqtt_client_app_publish(MQTT_TOPIC_STATUS_TX, json, n);
     }
@@ -219,16 +221,24 @@ static void on_mqtt_msg(const char *topic, const char *data, int data_len, void 
     /* 架构 3.7：命令分发器查表路由（取代 strstr 硬编码分支） */
     {
         uint16_t cmd_id = 0;
-        if      (strstr(buf, "\"led\"")    != NULL) cmd_id = CMD_LED_CTRL;
-        else if (strstr(buf, "\"reboot\"") != NULL) cmd_id = CMD_REBOOT;
-        else if (strstr(buf, "\"status\"") != NULL) cmd_id = CMD_GET_STATUS;
-        else if (strstr(buf, "\"ota\"")    != NULL) cmd_id = CMD_OTA_START;
+        const char *cmd_name = "";
+        if      (strstr(buf, "\"led\"")    != NULL) { cmd_id = CMD_LED_CTRL;   cmd_name = "led"; }
+        else if (strstr(buf, "\"reboot\"") != NULL) { cmd_id = CMD_REBOOT;     cmd_name = "reboot"; }
+        else if (strstr(buf, "\"status\"") != NULL) { cmd_id = CMD_GET_STATUS; cmd_name = "status"; }
+        else if (strstr(buf, "\"ota\"")    != NULL) { cmd_id = CMD_OTA_START;  cmd_name = "ota"; }
 
         if (cmd_id != 0) {
             int r = cmd_dispatch(cmd_id, (const uint8_t *)buf, (uint8_t)cp,
                                  CMD_AUTH_CLOUD);
             if (r == 1) {
                 ESP_LOGW(TAG, "cmd 0x%02X not registered", cmd_id);
+            }
+            /* 命令执行回执上行（与 QoS 送达确认区分，见契约 6.2） */
+            char ack[64];
+            int an = snprintf(ack, sizeof(ack), "{\"cmd\":\"%s\",\"result\":%d}",
+                              cmd_name, r);
+            if (an > 0) {
+                mqtt_client_app_publish(MQTT_TOPIC_ACK_TX, ack, an);
             }
 #if OtaUse
             if (cmd_id == CMD_OTA_START && r == 0) {

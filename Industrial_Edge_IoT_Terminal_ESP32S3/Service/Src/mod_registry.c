@@ -38,22 +38,22 @@ uint16_t mod_registry_run_stage(const mod_init_item_t *table, size_t count, uint
 
     /* 每轮扫描，直到无新进展 */
     while (progress) {
-        progress = 0;
+        x = 0;
         for (size_t i = 0; i < count; i++) {
             const mod_init_item_t *it = &table[i];
             if (it->stage != stage) continue;          /* 不属于本阶段 */
             if (s_results[i] != INIT_RESULT_PENDING) continue; /* 已处理 */
 
             /* 依赖检查：depends_on 中所有模块位必须已在 done_map，
-             * 否则本轮跳过（依赖可能在后续轮次完成） */
+             * 否则本轮跳过（依赖可能在后续轮次完成） */V                                                                                       
             if ((it->depends_on & ~s_done_map) != 0) {
                 continue;
             }
 
-            ESP_LOGI("mod_reg", "[stage%d] %s...", stage, it->name);
+            ESP_LOGI("mod_reg", "[stage %d] %s...", stage, it->name);
             if (it->init_func) {
                 it->init_func(it->arg);
-            }
+
             s_results[i] = INIT_RESULT_OK;
             if (it->mod_id < MOD_MAX) {
                 s_done_map |= BIT_MOD(it->mod_id);   /* 登记模块完成 */

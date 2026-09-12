@@ -198,6 +198,15 @@
             android:layout_marginTop="8dp"
             android:text="@string/start_ota" />
 
+        <ProgressBar
+            android:id="@+id/pbOta"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:max="100"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/tvOtaState"
             android:layout_width="wrap_content"
