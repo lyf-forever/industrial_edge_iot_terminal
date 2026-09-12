@@ -30,8 +30,19 @@ object AlarmPrefs {
         val minute = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
         val start = parseMinutes(dndStart(context)) ?: return false
         val end = parseMinutes(dndEnd(context)) ?: return false
-        return if (start <= end) minute in start until end
-        else minute >= start || minute < end
+        return inWindow(minute, start, end)
+    }
+
+    /**
+     * 纯函数：分钟数是否落在 [startMin, endMin) 窗口内；
+     * start > end 时按跨零点窗口处理（如 22:00-07:00）。
+     */
+    fun inWindow(minuteOfDay: Int, startMin: Int, endMin: Int): Boolean {
+        return if (startMin <= endMin) {
+            minuteOfDay in startMin until endMin
+        } else {
+            minuteOfDay >= startMin || minuteOfDay < endMin
+        }
     }
 
     /** 当前是否允许推送告警通知 */

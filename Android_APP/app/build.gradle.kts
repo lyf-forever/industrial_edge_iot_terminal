@@ -55,4 +55,6 @@ dependencies {
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
 
     testImplementation("junit:junit:4.13.2")
+    // JVM 单测用真实 org.json 实现（替代 android.jar 桩）
+    testImplementation("org.json:json:20231013")
 }

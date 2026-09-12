@@ -12,7 +12,8 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
-import com.indedge.terminal.app.util.Backoff
+import com.indedge.terminal.app.util.MainLooperScheduler
+import com.indedge.terminal.app.util.ReconnectController
 import java.util.UUID
 
 /**
@@ -71,8 +72,9 @@ object MqttManager {
 
     private var uri = ""
     private var clientId = ""
-    private var reconnectAttempts = 0
     private var userStopped = true
+
+    private val reconnect = ReconnectController(2_000L, 60_000L, MainLooperScheduler()) { attemptReconnect() }
 
     @Volatile
     var connecting = false
@@ -81,8 +83,6 @@ object MqttManager {
     @Volatile
     var connected = false
         private set
-
-    private val reconnectRunnable = Runnable { attemptReconnect() }
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
@@ -123,8 +123,7 @@ object MqttManager {
         uri = newUri
         clientId = newClientId
         userStopped = false
-        reconnectAttempts = 0
-        cancelReconnect()
+        reconnect.start()
         if (connecting) return
         connectInternal()
     }
@@ -151,11 +150,11 @@ object MqttManager {
             } catch (e: MqttException) {
                 connecting = false
                 notifyConnection(false, "连接失败: ${e.message}")
-                scheduleReconnect()
+                reconnect.schedule()
             } catch (e: Exception) {
                 connecting = false
                 notifyConnection(false, "连接失败: ${e.message}")
-                scheduleReconnect()
+                reconnect.schedule()
             }
         }.start()
     }
@@ -165,8 +164,7 @@ object MqttManager {
         override fun connectComplete(reconnect: Boolean, serverURI: String) {
             connecting = false
             // 连接成功：清零退避计数并停止待执行的重连
-            reconnectAttempts = 0
-            cancelReconnect()
+            reconnect.reset()
             subscribeAll()
             val detail = if (reconnect) "重连成功: $serverURI" else "连接成功: $serverURI"
             notifyConnection(true, detail)
@@ -175,7 +173,7 @@ object MqttManager {
         override fun connectionLost(cause: Throwable?) {
             connecting = false
             notifyConnection(false, "连接断开: ${cause?.message ?: "未知原因"}")
-            scheduleReconnect()
+            reconnect.schedule()
         }
 
         override fun messageArrived(topic: String, message: MqttMessage) {
@@ -188,27 +186,15 @@ object MqttManager {
         }
     }
 
-    /** 指数退避重连：2s/4s/8s/16s/32s/60s 封顶 */
-    private fun scheduleReconnect() {
-        if (userStopped) return
-        reconnectAttempts++
-        mainHandler.removeCallbacks(reconnectRunnable)
-        mainHandler.postDelayed(reconnectRunnable, Backoff.nextDelayMs(reconnectAttempts - 1, 2_000L, 60_000L))
-    }
-
     private fun attemptReconnect() {
         if (userStopped || connected || connecting) return
         connectInternal()
     }
 
-    private fun cancelReconnect() {
-        mainHandler.removeCallbacks(reconnectRunnable)
-    }
-
     /** 用户主动断开：停止自动重连 */
     fun disconnect() {
         userStopped = true
-        cancelReconnect()
+        reconnect.stop()
         connecting = false
         try {
             client?.disconnect()

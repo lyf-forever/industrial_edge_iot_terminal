@@ -2,9 +2,10 @@
 
 import android.os.Handler
 import android.os.Looper
+import com.indedge.terminal.app.util.MainLooperScheduler
+import com.indedge.terminal.app.util.ReconnectController
 import java.io.IOException
 import java.net.InetSocketAddress
-import com.indedge.terminal.app.util.Backoff
 import java.net.Socket
 
 /**
@@ -13,7 +14,7 @@ import java.net.Socket
  * 默认端口 8080，可在“设置”页修改目标地址）。
  *
  * 断线自愈：意外断开后指数退避自动重连（2s/4s/8s/…/30s 封顶，成功清零），
- * 用户主动 disconnect() 后停止重连。
+ * 用户主动 disconnect() 后停止重连。重试调度统一由 ReconnectController 负责。
  */
 object TcpProfile {
     const val DEFAULT_HOST = "192.168.4.1"
@@ -36,7 +37,8 @@ object TcpManager {
     private var lastHost = ""
     private var lastPort = 0
     private var userStopped = true
-    private var reconnectAttempts = 0
+
+    private val reconnect = ReconnectController(2_000L, 30_000L, MainLooperScheduler()) { attemptReconnect() }
 
     @Volatile
     var connected = false
@@ -45,8 +47,6 @@ object TcpManager {
     @Volatile
     var connecting = false
         private set
-
-    private val reconnectRunnable = Runnable { attemptReconnect() }
 
     fun register(l: TcpListener) = listeners.add(l)
 
@@ -61,8 +61,7 @@ object TcpManager {
         lastHost = host
         lastPort = port
         userStopped = false
-        reconnectAttempts = 0
-        cancelReconnect()
+        reconnect.start()
         if (connected || connecting) {
             // 视为切换目标：先静默停旧链路
             try {
@@ -89,8 +88,7 @@ object TcpManager {
                 socket = s
                 connecting = false
                 connected = true
-                reconnectAttempts = 0
-                cancelReconnect()
+                reconnect.reset()
                 notifyState("CONNECTED", "$lastHost:$lastPort 已连接")
                 startRxLoop()
             } catch (e: IOException) {
@@ -100,7 +98,7 @@ object TcpManager {
                     notifyState("ERROR", "TCP 连接失败: ${e.message}")
                 } else {
                     notifyState("RECONNECTING", "TCP 连接失败: ${e.message}，自动重连中")
-                    scheduleReconnect()
+                    reconnect.schedule()
                 }
             }
         }.start()
@@ -129,28 +127,16 @@ object TcpManager {
                         notifyState("DISCONNECTED", "TCP 连接已断开")
                     } else {
                         notifyState("RECONNECTING", "TCP 连接断开，自动重连中")
-                        scheduleReconnect()
+                        reconnect.schedule()
                     }
                 }
             }
         }.also { it.start() }
     }
 
-    /** 指数退避：2s/4s/8s/16s/30s 封顶 */
-    private fun scheduleReconnect() {
-        if (userStopped) return
-        reconnectAttempts++
-        mainHandler.removeCallbacks(reconnectRunnable)
-        mainHandler.postDelayed(reconnectRunnable, Backoff.nextDelayMs(reconnectAttempts - 1, 2_000L, 30_000L))
-    }
-
     private fun attemptReconnect() {
         if (userStopped || connected || connecting) return
         connectInternal()
-    }
-
-    private fun cancelReconnect() {
-        mainHandler.removeCallbacks(reconnectRunnable)
     }
 
     fun send(bytes: ByteArray): Boolean {
@@ -168,7 +154,7 @@ object TcpManager {
     fun disconnect() {
         val wasUp = connected || connecting
         userStopped = true
-        cancelReconnect()
+        reconnect.stop()
         connecting = false
         try {
             rxThread?.interrupt()

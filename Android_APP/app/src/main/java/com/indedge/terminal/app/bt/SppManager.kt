@@ -6,7 +6,8 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.os.Handler
 import android.os.Looper
-import com.indedge.terminal.app.util.Backoff
+import com.indedge.terminal.app.util.MainLooperScheduler
+import com.indedge.terminal.app.util.ReconnectController
 import java.io.IOException
 
 /**
@@ -15,7 +16,7 @@ import java.io.IOException
  * 以及 ESP32-S3 内置经典蓝牙 SPP（设计指南 Phase 2）。
  *
  * 断线自愈：意外断开后指数退避自动重连（2s/4s/8s/…/30s 封顶，成功清零），
- * 用户主动 disconnect() 后停止重连。
+ * 用户主动 disconnect() 后停止重连。重试调度统一由 ReconnectController 负责。
  */
 object SppProfile {
     /** 标准 SPP 服务 UUID */
@@ -39,7 +40,8 @@ object SppManager {
 
     private var lastDevice: BluetoothDevice? = null
     private var userStopped = true
-    private var reconnectAttempts = 0
+
+    private val reconnect = ReconnectController(2_000L, 30_000L, MainLooperScheduler()) { attemptReconnect() }
 
     @Volatile
     var connected = false
@@ -53,8 +55,6 @@ object SppManager {
     @Volatile
     var connectedDevice: BluetoothDevice? = null
         private set
-
-    private val reconnectRunnable = Runnable { attemptReconnect() }
 
     fun btAdapter(): BluetoothAdapter? {
         adapter = adapter ?: BluetoothAdapter.getDefaultAdapter()
@@ -71,17 +71,14 @@ object SppManager {
         mainHandler.post { listeners.forEach { it.onSppState(state, detail) } }
     }
 
-    @SuppressLint("MissingPermission")
     fun pairedDevices(): List<BluetoothDevice> =
         btAdapter()?.bondedDevices?.toList() ?: emptyList()
 
     /** 用户主动连接：记录目标设备并进入保活态；若已连接其他设备则先切换目标 */
-    @SuppressLint("MissingPermission")
     fun connect(device: BluetoothDevice) {
         lastDevice = device
         userStopped = false
-        reconnectAttempts = 0
-        cancelReconnect()
+        reconnect.start()
         if (connected || connecting) {
             // 正在连接/已连接：视为切换目标，先静默停旧链路
             try {
@@ -97,7 +94,6 @@ object SppManager {
         connectInternal()
     }
 
-    @SuppressLint("MissingPermission")
     private fun connectInternal() {
         if (connecting || connected) return
         val d = lastDevice ?: return
@@ -111,8 +107,7 @@ object SppManager {
                 connecting = false
                 connected = true
                 connectedDevice = d
-                reconnectAttempts = 0
-                cancelReconnect()
+                reconnect.reset()
                 notifyState("CONNECTED", "${d.name ?: d.address} 已连接")
                 startRxLoop()
             } catch (e: IOException) {
@@ -123,7 +118,7 @@ object SppManager {
                     notifyState("ERROR", "SPP 连接失败: ${e.message}（若未配对请先在系统蓝牙中配对）")
                 } else {
                     notifyState("RECONNECTING", "SPP 连接失败: ${e.message}，自动重连中")
-                    scheduleReconnect()
+                    reconnect.schedule()
                 }
             }
         }.start()
@@ -153,28 +148,16 @@ object SppManager {
                         notifyState("DISCONNECTED", "SPP 连接已断开")
                     } else {
                         notifyState("RECONNECTING", "SPP 连接断开，自动重连中")
-                        scheduleReconnect()
+                        reconnect.schedule()
                     }
                 }
             }
         }.also { it.start() }
     }
 
-    /** 指数退避：2s/4s/8s/16s/30s 封顶 */
-    private fun scheduleReconnect() {
-        if (userStopped) return
-        reconnectAttempts++
-        mainHandler.removeCallbacks(reconnectRunnable)
-        mainHandler.postDelayed(reconnectRunnable, Backoff.nextDelayMs(reconnectAttempts - 1, 2_000L, 30_000L))
-    }
-
     private fun attemptReconnect() {
         if (userStopped || connected || connecting) return
         connectInternal()
-    }
-
-    private fun cancelReconnect() {
-        mainHandler.removeCallbacks(reconnectRunnable)
     }
 
     fun send(bytes: ByteArray): Boolean {
@@ -192,7 +175,7 @@ object SppManager {
     fun disconnect() {
         val wasUp = connected || connecting
         userStopped = true
-        cancelReconnect()
+        reconnect.stop()
         connecting = false
         connectedDevice = null
         try {

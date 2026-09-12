@@ -54,6 +54,14 @@ jobs:
         run: |
           ./gradlew --no-daemon lintDebug
 
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: Android_APP/app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
