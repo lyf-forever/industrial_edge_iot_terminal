@@ -44,6 +44,9 @@ class RssiChartView @JvmOverloads constructor(
         textSize = 32f
     }
 
+    /** 复用 Path，避免 onDraw 内分配 */
+    private val path = Path()
+
     private val minRssi = -100f
     private val maxRssi = -30f
 
@@ -86,7 +89,7 @@ class RssiChartView @JvmOverloads constructor(
 
         // 折线（右对齐滚动）
         val step = (w - padL - padR) / (maxSamples - 1).toFloat()
-        val path = Path()
+        path.reset()
         var first = true
         samples.forEachIndexed { i, v ->
             val x = w - padR - (samples.size - 1 - i) * step

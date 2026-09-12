@@ -8,6 +8,7 @@ import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.ContextCompat
 import com.indedge.terminal.app.R
+import java.util.Locale
 import kotlin.math.max
 
 /**
@@ -45,6 +46,9 @@ class LineChartView @JvmOverloads constructor(
         color = ContextCompat.getColor(context, R.color.chart_axis)
         textSize = 28f
     }
+
+    /** 复用 Path，避免 onDraw 内分配 */
+    private val path = Path()
 
     /** 注册一条序列，返回索引 */
     fun addSeries(name: String, color: Int, maxPoints: Int = 60): Int {
@@ -115,12 +119,12 @@ class LineChartView @JvmOverloads constructor(
             val v = hi - (hi - lo) * i / 4f
             val y = yOf(v)
             canvas.drawLine(padL, y, w - padR, y, paintGrid)
-            canvas.drawText(String.format("%.1f", v), 4f, y + 8f, paintText)
+            canvas.drawText(String.format(Locale.US, "%.1f", v), 4f, y + 8f, paintText)
         }
 
         // 折线（右对齐滚动）
         val step = (w - padL - padR) / (s.maxPoints - 1).toFloat()
-        val path = Path()
+        path.reset()
         var first = true
         s.points.forEachIndexed { i, v ->
             val x = w - padR - (s.points.size - 1 - i) * step

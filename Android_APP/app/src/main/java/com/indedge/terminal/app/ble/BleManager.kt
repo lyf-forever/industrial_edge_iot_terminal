@@ -13,6 +13,7 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Handler
@@ -64,7 +65,7 @@ object BleManager {
     private var adapter: BluetoothAdapter? = null
     private var scanner: BluetoothLeScanner? = null
     private var gatt: BluetoothGatt? = null
-    private var appCtx: Context? = null
+    private var appCtx: Application? = null
 
     private var txCh: BluetoothGattCharacteristic? = null
     private var rxCh: BluetoothGattCharacteristic? = null
@@ -98,7 +99,7 @@ object BleManager {
 
     fun init(context: Context) {
         if (adapter != null) return
-        appCtx = context.applicationContext
+        appCtx = context.applicationContext as Application
         val bm = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         adapter = bm.adapter
         scanner = adapter?.bluetoothLeScanner

@@ -134,8 +134,8 @@ class StatusFragment : Fragment() {
         }
         vm.sensorLatest.observe(viewLifecycleOwner) { d ->
             if (d == null) return@observe
-            binding.tvTemp.text = String.format("%.1f ℃", d.temp)
-            binding.tvHumid.text = String.format("%.1f %%", d.humid)
+            binding.tvTemp.text = String.format(Locale.US, "%.1f ℃", d.temp)
+            binding.tvHumid.text = String.format(Locale.US, "%.1f %%", d.humid)
             binding.tvGas.text = "${d.gas} ppm"
             binding.tvCo2.text = "${d.co2} ppm"
             binding.tvPress.text = "${d.press} hPa"
@@ -200,8 +200,8 @@ class StatusFragment : Fragment() {
             getString(
                 R.string.stats_row,
                 hourFmt.format(Date(r.bucketMs)),
-                String.format("%.1f", r.avgTemp),
-                String.format("%.1f", r.avgHumid),
+                String.format(Locale.US, "%.1f", r.avgTemp),
+                String.format(Locale.US, "%.1f", r.avgHumid),
                 r.maxGas
             )
         }
@@ -264,8 +264,8 @@ class StatusFragment : Fragment() {
             getString(
                 R.string.history_row,
                 fullFmt.format(Date(r.ts)),
-                String.format("%.1f", r.temp),
-                String.format("%.1f", r.humid),
+                String.format(Locale.US, "%.1f", r.temp),
+                String.format(Locale.US, "%.1f", r.humid),
                 r.gas, r.co2, r.press
             )
         }

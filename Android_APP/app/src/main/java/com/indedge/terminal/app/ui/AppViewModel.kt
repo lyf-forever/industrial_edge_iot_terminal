@@ -61,7 +61,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mq
 
     // ---- 心跳 / 在线 ----
     val online = MutableLiveData(false)
-    val hbLine = MutableLiveData("暂无心跳 · 运行 --")
+    val hbLine = MutableLiveData("暂无心跳 · 运行 —")
 
     // ---- 命令历史（oldest-first） ----
     val cmdEvent = MutableLiveData<String?>(null)
@@ -185,7 +185,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mq
             (System.currentTimeMillis() - lastHeartbeatAt) < HB_TIMEOUT_MS
         online.value = ok
         hbLine.value = if (lastHeartbeatAt == 0L) {
-            "暂无心跳 · 运行 --"
+            "暂无心跳 · 运行 —"
         } else {
             "最后心跳 ${timeFmt.format(Date(lastHeartbeatAt))} · 运行 ${TimeFmt.formatUptime(lastUptime)}"
         }

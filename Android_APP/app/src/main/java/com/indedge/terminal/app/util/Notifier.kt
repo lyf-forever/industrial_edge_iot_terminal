@@ -23,14 +23,13 @@ object Notifier {
     private const val NOTIF_ID = 1001
 
     fun init(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                context.getString(R.string.notif_channel),
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            context.getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
-        }
+        // minSdk 26：通知渠道始终可用
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            context.getString(R.string.notif_channel),
+            NotificationManager.IMPORTANCE_HIGH
+        )
+        context.getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
     }
 
     /** 判断是否可推送（通知权限 + 告警等级门槛由调用方判断） */

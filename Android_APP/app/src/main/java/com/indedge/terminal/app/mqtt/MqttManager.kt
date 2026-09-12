@@ -1,5 +1,6 @@
 package com.indedge.terminal.app.mqtt
 
+import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -68,7 +69,7 @@ object MqttManager {
     private val listeners = mutableSetOf<MqttEventListener>()
 
     private var client: MqttClient? = null
-    private var appCtx: Context? = null
+    private var appCtx: Application? = null
 
     private var uri = ""
     private var clientId = ""
@@ -94,7 +95,7 @@ object MqttManager {
     /** 进程启动时初始化（注册网络监听） */
     fun init(context: Context) {
         if (appCtx != null) return
-        appCtx = context.applicationContext
+        appCtx = context.applicationContext as Application
         try {
             val cm = appCtx?.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
             cm?.registerDefaultNetworkCallback(networkCallback)

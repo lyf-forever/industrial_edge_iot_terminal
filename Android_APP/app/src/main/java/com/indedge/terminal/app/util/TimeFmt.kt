@@ -9,15 +9,15 @@ import java.util.Locale
  */
 object TimeFmt {
 
-    private val fileFmt = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-    private val rowFmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    private val fileFmt = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+    private val rowFmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
     /** 秒 -> HH:mm:ss */
     fun formatUptime(seconds: Long): String {
         val h = seconds / 3600
         val m = seconds % 3600 / 60
         val s = seconds % 60
-        return String.format("%02d:%02d:%02d", h, m, s)
+        return String.format(Locale.US, "%02d:%02d:%02d", h, m, s)
     }
 
     /** 导出文件名时间戳 */

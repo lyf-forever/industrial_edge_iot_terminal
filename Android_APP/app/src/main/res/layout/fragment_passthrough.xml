@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -86,6 +87,7 @@
                 android:textColor="@color/gray" />
 
             <ListView
+            tools:ignore="NestedScrolling"
                 android:id="@+id/lvBtDevices"
                 android:layout_width="match_parent"
                 android:layout_height="160dp"
@@ -164,7 +166,7 @@
             android:textSize="12sp"
             android:textColor="@color/gray" />
 
-        <ScrollView
+        <androidx.core.widget.NestedScrollView
             android:id="@+id/scrollRx"
             android:layout_width="match_parent"
             android:layout_height="160dp"
@@ -178,7 +180,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="monospace"
                 android:textSize="12sp" />
-        </ScrollView>
+        </androidx.core.widget.NestedScrollView>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -188,6 +190,7 @@
 
             <EditText
                 android:id="@+id/etTx"
+                android:importantForAutofill="no"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -224,4 +227,4 @@
             android:textColor="@color/gray" />
 
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

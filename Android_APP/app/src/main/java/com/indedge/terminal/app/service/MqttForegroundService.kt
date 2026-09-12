@@ -31,12 +31,8 @@ class MqttForegroundService : Service(), MqttEventListener {
         const val ACTION_STOP = "com.indedge.terminal.app.action.STOP_KEEPALIVE"
 
         fun start(context: Context) {
-            val intent = Intent(context, MqttForegroundService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            // minSdk 26：startForegroundService 始终可用
+            context.startForegroundService(Intent(context, MqttForegroundService::class.java))
         }
 
         fun stop(context: Context) {
@@ -45,14 +41,13 @@ class MqttForegroundService : Service(), MqttEventListener {
     }
 
     private fun createChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                getString(R.string.keep_alive_channel),
-                NotificationManager.IMPORTANCE_LOW
-            )
-            getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
-        }
+        // minSdk 26：通知渠道始终可用
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            getString(R.string.keep_alive_channel),
+            NotificationManager.IMPORTANCE_LOW
+        )
+        getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
